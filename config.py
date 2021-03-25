@@ -31,7 +31,7 @@ class Config(object):
     SQLALCHEMY_ECHO = False
     SQLALCHEMY_TRACK_MODIFICATIONS = False
 
-    CFG_LOG_PATH_DFLT = 'cfg_log_dflt.yaml'   # This has to be default log config in absence of an override in APP this should prevail.
+    CFG_LOG_PATH_DFLT = 'log_cfg_dflt.yaml'  # This has to be default log config in absence of an override in APP this should prevail.
 
 
 class ProductionConfig(Config):
