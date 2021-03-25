@@ -1,7 +1,8 @@
 import CCM
 
+
 def create_CCM_app():
-    CCM.app.debug = True
+    # CCM.app.debug = True # This is loaded from the config as DEBUG = True
     CCM.db.create_all(app=CCM.app)
     CCM.app.run()
 
