@@ -6,7 +6,9 @@
 
 from flask import Flask
 import os
+import CCM.logging_setup
 from werkzeug.utils import import_string
+import logging
 
 from CCM.PAY03.pay03 import pay03_bp  # imported pay03_bp Blueprint from PAY03
 
@@ -45,6 +47,7 @@ def configure_app(application):
         application.config.from_envvar('APP_CONFIG')
         print("APP_CONFIG env variable value", os.environ["APP_CONFIG"])
 
+    CCM.logging_setup.setup_logging(application)
     # Initializing with the DB of the APP as defined in the .models
     db.init_app(application)
 
@@ -53,6 +56,9 @@ app = Flask(__name__)
 
 # Configure the application
 configure_app(app)
+
+logger = logging.getLogger(__name__)
+logger.info("logger set :D")
 
 print(app.config)  # try to have this information emit out only settings which have non null values first & then d rest
 
