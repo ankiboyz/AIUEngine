@@ -7,7 +7,6 @@ _cwd = os.path.dirname(os.path.abspath(__file__))
 
 '''All Configurations here DB as well as Logging based on the environment'''
 
-
 class Config(object):
     DEBUG = False
     TESTING = False

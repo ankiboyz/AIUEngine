@@ -37,12 +37,15 @@ def configure_app(application):
         application.config.from_object(pwd_relative + '.' + 'config_overrides')
 
     """ This override is provided from the environment variable APP_CONFIG.
-    The environment variable is the path to the settings config file.    
+    The environment variable is the path to the settings config file.
+    Please note the settings file should have upper case settings keys with values.
+    eg:    LOG_CNFG_PATH = 'log_cnfg_dflt.yaml'   
     """
     if os.environ.get("APP_CONFIG", None) is not None:
         application.config.from_envvar('APP_CONFIG')
+        print("APP_CONFIG env variable value", os.environ["APP_CONFIG"])
 
-        # Initializing with the DB of the APP as defined in the .models
+    # Initializing with the DB of the APP as defined in the .models
     db.init_app(application)
 
 
@@ -51,7 +54,7 @@ app = Flask(__name__)
 # Configure the application
 configure_app(app)
 
-print(app.config)
+print(app.config)  # try to have this information emit out only settings which have non null values first & then d rest
 
 # Registering the views Blueprints
 app.register_blueprint(pay03_bp, url_prefix='/CCM/pay03')
