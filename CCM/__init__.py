@@ -4,11 +4,11 @@
     CCM controls would also go in.
 """
 
-from flask import Flask
+from flask import Flask, g
 import os
 import CCM.logging_setup
 from werkzeug.utils import import_string
-import logging
+import logging, commons.general_methods
 
 from CCM.PAY03.pay03 import pay03_bp  # imported pay03_bp Blueprint from PAY03
 
@@ -54,10 +54,23 @@ def configure_app(application):
 
 app = Flask(__name__)
 
+
+@app.before_request
+def setup_request_context():
+    ''' The values set here would be available per request, across the request's thread for the duration of the
+    request execution '''
+
+    # let's print the existing values in the g proxy
+    print('values in the g when the request comes', g.__dict__)
+    g.passport = commons.general_methods.generate_passport()
+    print('values in the g when passport is set', g.__dict__)
+
+
 # Configure the application
 configure_app(app)
 
 logger = logging.getLogger(__name__)
+print(logger.parent, 'parent of CCM logger')
 logger.info("logger set :D")
 
 print(app.config)  # try to have this information emit out only settings which have non null values first & then d rest

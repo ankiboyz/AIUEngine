@@ -7,7 +7,7 @@ def create_ccm_app():
     CCM.app.run()
 
 
-if __name__ == "__main__" :
+if __name__ == "__main__":
     print(__name__)
     # app.debug = True
     # db.create_all(app=app)

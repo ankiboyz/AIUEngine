@@ -10,27 +10,17 @@ import logging.config   # module in a package
 # from flask import request
 import flask
 from datetime import datetime
-import random
 import yaml
-
-
-def generate_passport():
-    now = datetime.now()
-    date_time_concat = now.strftime("%Y%m%d%H%M%S%f")
-    random_num = random.randint(1000, 9999)      # Generating a 4 digit random number
-    now_an_id = str(date_time_concat)+str(random_num)
-
-    print('Passport Number', now_an_id)
-    return now_an_id
-
 
 class ContextualFilter(logging.Filter):
     def filter(self, log_record):
 
-        passport_num = generate_passport()
-        log_record.passport = passport_num
+        # passport_num = generate_passport()
+        log_record.passport = ''    # setting default value as blank
+        log_record.url = ''  # setting default value as blank
 
         if flask.has_request_context():
+            log_record.passport = getattr(flask.g, 'passport', '12345...')      # defining master key as 12345...
             log_record.url = flask.request.path
             log_record.method = flask.request.method
             log_record.ip = flask.request.environ.get("REMOTE_ADDR")

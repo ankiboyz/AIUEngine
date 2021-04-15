@@ -31,6 +31,7 @@ class Config(object):
     SQLALCHEMY_TRACK_MODIFICATIONS = False
 
     # This has to be default path to provide log config details,in absence of an override in APP,this should prevail.
+    # Currently this file is not filled with the logging configuration values.
     LOG_CNFG_PATH = 'log_cnfg_dflt.yaml'
 
 

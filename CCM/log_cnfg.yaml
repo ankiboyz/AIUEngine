@@ -27,9 +27,9 @@ formatters:
   # formatter name:
   #   format: "defined using pre-defined variables"
   standard:
-    format: "%(asctime)s - %(levelname)s - %(passport)s - %(module)s - %(funcName)s - %(lineno)4d - %(name)s - [%(processName)s - %(process)d] - [%(threadName)s - %(thread)d] - %(message)s  "
+    format: "%(asctime)s - %(levelname)s - %(passport)s - %(module)s - %(funcName)s - %(lineno)4d - %(name)s - [%(processName)s - %(process)d] - [%(threadName)s - %(thread)d] - %(message)s - %(url)s  "
   error:
-    format: "%(asctime)s - %(levelname)s - %(passport)s - %(module)s - %(funcName)s - %(lineno)4d - %(name)s - [%(processName)s - %(process)d] - [%(threadName)s - %(thread)d] - %(message)s  "
+    format: "%(asctime)s - %(levelname)s - %(passport)s - %(module)s - %(funcName)s - %(lineno)4d - %(name)s - [%(processName)s - %(process)d] - [%(threadName)s - %(thread)d] - %(message)s - %(url)s  "
 
 # Logging Handlers
 # Console and Error Console belongs
@@ -91,17 +91,22 @@ root:
   # Logger Level - Set to NOTSET if you have child loggers with pre-defined levels;
   # Still to be worked upon : we will have the level set up by
   # env variables eg DEBUG as True / False as per the configurations file
-  level: NOTSET
+
+  # This level should also be set by whether the APP is running in DEBUG mode,
+  #  else this can be INFO or ERROR or NOTSET (but notset will emit any level message that reaches here propagating)
+  #  earlier set as level: NOTSET
+  level: ERROR
   # Attach handlers for Root Logger
   handlers: [debug_file_handler, error_file_handler, console, info_file_handler]
-  propogate: yes
+  propagate: no # the hierarchy stops here, nothing to traverse beyond it!
 
 # In case loggers for some specific modules need to be defined; those can also be defined here.
-#loggers:
-#    <module>:
-#        level: INFO
-#        handlers: [console, info_file_handler, error_file_handler, critical_file_handler, debug_file_handler, warn_file_handler]
-#        propogate: no
+# For every app , its parent package level can be defined here.
+loggers:
+    CCM:
+        level: DEBUG  # here , this level should be based on the level of whether app is in Debug mode! choice is between INFO/DEBUG, as we log configurations of the app at INFO level.
+        handlers: [debug_file_handler, error_file_handler, console, info_file_handler]
+        propagate: no # NO propagation beyond this, since this is the root for this app.
 #
 #    <module.x>:
 #        level: DEBUG
