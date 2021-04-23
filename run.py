@@ -1,4 +1,5 @@
 import CCM
+import cx_Oracle
 
 
 def create_ccm_app():
