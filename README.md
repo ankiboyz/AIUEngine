@@ -5,7 +5,8 @@ This project mainly has the following ideologies:
 
 1. Every Package under Project folder is a self serving APP.
 2. Every APP has its own logging capabilities.
-3. Every APP's root package e.g. CCM can have its own config overrides.
+3. Every APP's root package e.g. CCM can have its own configuration overrides of the settings.
+   Accessed in the application via app.config["Settings Values""]
 4. Every APP's \__init__.py file we are maintaining the configuration of the 
    APP. The method configure_app mentioned there defines the configuration of the APP.
    The configuration means the following aspects:
