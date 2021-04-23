@@ -1,5 +1,8 @@
-import CCM
+import CCM  # The moment CCM is imported its __init__ is called; hence the configuration settings are completed and we have app.config values
 import cx_Oracle
+
+# cx_Oracle.init_oracle_client(lib_dir=r"C:\ORACLEINSTANTCLIENT\instantclient_19_10")
+cx_Oracle.init_oracle_client(lib_dir=CCM.app.config["ORACLE_CLIENT_PATH"])
 
 
 def create_ccm_app():

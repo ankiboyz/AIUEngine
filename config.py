@@ -30,10 +30,13 @@ class Config(object):
     SQLALCHEMY_DATABASE_URI = 'oracle://SIDDHANT:green123@192.168.2.18:2020/platform'
     SQLALCHEMY_ECHO = False
     SQLALCHEMY_TRACK_MODIFICATIONS = False
-
+    ORACLE_CLIENT_PATH = r"C:\ORACLEINSTANTCLIENT\instantclient_19_10"
     # This has to be default path to provide log config details,in absence of an override in APP,this should prevail.
     # Currently this file is not filled with the logging configuration values.
-    LOG_CNFG_PATH = 'log_cnfg_dflt.yaml'
+    # IN case this file is within the project path then use relative path else mention the Absolute path.
+    # In below example it is relative path since the file is within the project and is part of the executables.
+    # Unless until some special need is encountered this path is not to be changed.
+    LOG_CNFG_PATH = './log_cnfg_dflt.yaml'
 
 
 class ProductionConfig(Config):

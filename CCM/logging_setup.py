@@ -42,6 +42,11 @@ def setup_logging(app):
     is_debug = app.config['DEBUG']
     path = app.config['LOG_CNFG_PATH']
 
-    with open('C:\\Users\\ASaxena\\PycharmProjects\\AIUEngine\\CCM\\log_cnfg.yaml', 'r') as f:
+    # with open('C:\\Users\\ASaxena\\PycharmProjects\\AIUEngine\\CCM\\log_cnfg.yaml', 'r') as f:
+    # with open('.\\CCM\\log_cnfg.yaml', 'r') as f:
+    # with open('./CCM/log_cnfg.yaml', 'r') as f:  This path separator (/ forward slash) works on Windows as well
+    log_config_file_path = app.config["LOG_CNFG_PATH"]  # it is to be taken from the Configuration settings
+
+    with open(log_config_file_path, 'r') as f:
         log_cnfg_settings = yaml.safe_load(f.read())
         logging.config.dictConfig(log_cnfg_settings)
