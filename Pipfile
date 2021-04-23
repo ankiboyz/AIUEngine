@@ -9,6 +9,7 @@ verify_ssl = true
 flask = "*"
 flask-sqlalchemy = "==2.5"
 pyyaml = "*"
+cx-oracle = "*"
 
 [requires]
 python_version = "3.6"
