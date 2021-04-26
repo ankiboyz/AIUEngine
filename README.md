@@ -18,7 +18,8 @@ This project mainly has the following ideologies:
 5. Every APP's logging_setup.py method defines the additional logging enhancements
    needed by the respective APP; eg for CCM app the method adds a passport number to
    the incoming request, so as to track its entire Lifecycle.
-   
+6. models.py file under every package contains the models for that APP; eg one can find
+models.py under CCM package, which stores all models for CCM APP.  
 **Points to note**
 1. Since this app is connecting to Oracle database for maintaining some status tables,
 there is a dependency on the oracle client to be available on the OS for the specific 
