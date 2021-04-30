@@ -10,7 +10,7 @@ import CCM.logging_setup
 from werkzeug.utils import import_string
 import logging, commons.general_methods
 
-from CCM.PAY03.pay03 import pay03_bp  # imported pay03_bp Blueprint from PAY03
+from CCM.PAY05.pay05 import pay05_bp  # imported pay05_bp Blueprint from PAY05
 
 from .models import db
 
@@ -76,4 +76,4 @@ logger.info("logger set :D")
 print(app.config)  # try to have this information emit out only settings which have non null values first & then d rest
 
 # Registering the views Blueprints
-app.register_blueprint(pay03_bp, url_prefix='/CCM/pay03')
+app.register_blueprint(pay05_bp, url_prefix='/CCM/pay05')
