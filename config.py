@@ -29,7 +29,7 @@ class Config(object):
     # SQLALCHEMY_DATABASE_URI = 'sqlite:///' + os.path.join(_cwd, 'AIUEngine.db')
     SQLALCHEMY_DATABASE_URI = 'oracle://SIDDHANT:green123@192.168.2.18:2020/platform'
     SQLALCHEMY_ECHO = False
-    SQLALCHEMY_TRACK_MODIFICATIONS = False
+    SQLALCHEMY_TRACK_MODIFICATIONS = False  # enabled True for now
     ORACLE_CLIENT_PATH = r"C:\ORACLEINSTANTCLIENT\instantclient_19_10"
     # This has to be default path to provide log config details,in absence of an override in APP,this should prevail.
     # Currently this file is not filled with the logging configuration values.

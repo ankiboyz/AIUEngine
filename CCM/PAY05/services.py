@@ -1,12 +1,14 @@
 # services.py
 """ This module will provide various methods invoked from the web services call to this CCM control"""
+import logging
 from datetime import datetime
 from CCM import models
-from flask_sqlalchemy import SQLAlchemy
+# from flask_sqlalchemy import SQLAlchemy
 from CCM.app_scope_methods import ccm_sequences
 
-db = SQLAlchemy()
+db = models.db()
 
+logger = logging.getLogger(__name__)
 
 class CCMHeader:
     def __init__(self):
@@ -26,7 +28,7 @@ class CCMHeader:
         ccmhdr.created_date = datetime.now()
         ccmhdr.updated_date = datetime.now()
 
-        ret_op = ccm_sequences.sequences_provider(ip_tablename='glt_ccm_xtnd_ccm_header',
+        ret_op = ccm_sequences.sequences_provider(ip_tablename='glt_ccm_xtnd_monitor_header',
                                                   ip_columnname='id',
                                                   ip_batchsize=1)
         ccmhdr.id = ret_op['start_value']  # since batchsize was given as 1, so start and end will be same.

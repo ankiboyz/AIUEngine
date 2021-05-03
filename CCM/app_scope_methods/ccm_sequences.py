@@ -3,12 +3,12 @@
 ''' This method is to provide the sequence numbers for the columns needed in the application.
 Mostly for the primary keys and can also be used for other columns provided the column name for the table. '''
 import logging
-from flask_sqlalchemy import SQLAlchemy
+# from flask_sqlalchemy import SQLAlchemy
 from CCM import models
 
 logger = logging.getLogger(__name__)
 
-db = SQLAlchemy()
+db = models.db  # if only db=SQLlAlchemy is done then update is not recognized.
 
 
 def sequences_provider(ip_tablename, ip_columnname, ip_batchsize):
@@ -44,11 +44,11 @@ def sequences_provider(ip_tablename, ip_columnname, ip_batchsize):
     results_first = current_sequence_query.first()
 
     print('This is current_sequence', current_sequence_query)
-    print(type(results_first))
+    print(type(results_first), results_first)
 
     if results_first is None:
         ccm_sequences_obj = models.CCMSequences(table_name=ip_tablename, column_name=ip_columnname, sequences=0)
-        db.session.add(ccm_sequences_obj)   # insert here
+        db.session.add(ccm_sequences_obj)   # insert happens here
         db.session.commit()
         current_sequence_value = 0
         results_first = ccm_sequences_obj
@@ -60,10 +60,13 @@ def sequences_provider(ip_tablename, ip_columnname, ip_batchsize):
     end_value = current_sequence_value + ip_batchsize  # so,it denotes the sequence values exhausted by this point.
 
     # and now commit with this value , only return after commit happens
-    # ccm_sequences_obj = models.CCMSequences(table_name=ip_tablename, column_name=ip_columnname, sequences=end_value)
     results_first.sequences = end_value
-    # db.session.add(ccm_sequences_obj)
-    db.session.commit()     # update happens here and the sequences value gets changed for the given table and col name.
+
+    try:
+        # print('results_first.sequences' , results_first.sequences)
+        db.session.commit()  # update happens here and the sequences value gets changed for the given table and colname.
+    except Exception as error:
+        return error        # formalize a return object. so create return objects and return those so it is universally
 
     print({'start_value': start_value, 'end_value': end_value})
     return {'start_value': start_value, 'end_value': end_value}
