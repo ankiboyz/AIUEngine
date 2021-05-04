@@ -5,7 +5,8 @@ status_values = ('SUBMITTED', 'PROCESSING', 'FAILED', 'COMPLETED')
 print(dir(enum.Enum))
 # status_values_enum = enum.Enum(**status_values)
 
-
+# There needs to be 2 columns - job status and result  - job status - submitted, processing, completed
+# result - Success / Failure
 class StatusEnum(enum.Enum):
     # SUBMITTED = 'SUBMITTED'
     # PROCESSING = 'PROCESSING'

@@ -6,7 +6,7 @@ from CCM import models
 # from flask_sqlalchemy import SQLAlchemy
 from CCM.app_scope_methods import ccm_sequences
 
-db = models.db()
+db = models.db
 
 logger = logging.getLogger(__name__)
 
