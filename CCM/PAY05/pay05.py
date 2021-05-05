@@ -41,13 +41,15 @@ def submit_job():
 
     # created_date and updated_date will be filled up in the insert/update methods for the
     # particular obj eg CCMHeader and CCMDetail tables
-    CCMhdr_obj.insert(control_id='PAY05', operation_type='CCM'
-                      , parameters=json.dumps(request.args)
-                      , start_date=datetime.now()
-                      , status=StatusEnum.SUBMITTED)
+    ret_op = CCMhdr_obj.insert(control_id='PAY05', operation_type='CCM'
+                               , parameters=json.dumps(request.args)
+                               , start_date=datetime.now()
+                               , status=StatusEnum.SUBMITTED)
 
-    pay05_executions = CCMMonitorHDR.query.all()
+    # pay05_executions = CCMMonitorHDR.query.all()
+    # print('pay05_executions', pay05_executions)
 
     # logging.debug("I am in PA03 with args as {}", request.args)
 
-    return str(pay05_executions)
+    # return str(pay05_executions)
+    return jsonify(ret_op)
