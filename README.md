@@ -34,3 +34,9 @@ It can be downloaded from the links mentioned in the above document eg for 32-bi
 
 [Link to cx_Oracle Installation]: https://cx-oracle.readthedocs.io/en/latest/user_guide/installation.html
 [Link to 32 bit Oracle Instant Client]: https://www.oracle.com/database/technologies/instant-client/microsoft-windows-32-downloads.html
+
+For the Kafka Setup:
+
+We need to have following configuration in order to make use of the Kafka producers and consumers 
+for the project:
+    KAFKA-BROKER-URLS : This is a list of urls in case it is a Kafka Cluster, in case needed for greater redundancy.

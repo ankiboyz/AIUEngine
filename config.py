@@ -38,6 +38,9 @@ class Config(object):
     # Unless until some special need is encountered this path is not to be changed.
     LOG_CNFG_PATH = './log_cnfg_dflt.yaml'
 
+    # Kafka Related Settings
+    # This stores the information related to the Kafka cluster, all the brokers in the cluster to be used by the engine.
+    KAFKA_BROKER_URLS = ['localhost:9092', ]
 
 class ProductionConfig(Config):
     DEBUG = False
