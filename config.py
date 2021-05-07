@@ -23,6 +23,12 @@ class Config(object):
         print(secretkey)
         return secretkey
 
+    # Engine related Settings
+    # Engine ID can be used to refer to specific instance of the Engine running, in case multiple are running in d
+    # cluster; example as in load balancer scenario. If any specific operations need be done via this engine the
+    # ENGINE_ID identifier will be helpful. As far as the IDs are uniquely identifiable any name can be provided to 'em.
+    ENGINE_ID = 'EINSTEIN'
+
     '''SQLALCHEMY_ECHO If set to True SQLAlchemy will log all the statements issued to stderr 
     which can be useful for debugging.
     '''
