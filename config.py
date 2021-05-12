@@ -5,6 +5,10 @@ import os
 '''Having the DB file at the Current Working Directory'''
 _cwd = os.path.dirname(os.path.abspath(__file__))
 
+"""These specific configurations which need to be available even before the application context is made available.
+These are for all the APPs. NO overrides available inside each app for these settings."""
+# LOG_LEVEL = 'ERROR'   # not gets applicable as the app starts the previous loggers are disabled.
+
 '''All Configurations here DB as well as Logging based on the environment'''
 
 class Config(object):
@@ -29,6 +33,7 @@ class Config(object):
     # ENGINE_ID identifier will be helpful. As far as the IDs are uniquely identifiable any name can be provided to 'em.
     ENGINE_ID = 'EINSTEIN'
 
+
     '''SQLALCHEMY_ECHO If set to True SQLAlchemy will log all the statements issued to stderr 
     which can be useful for debugging.
     '''
@@ -46,6 +51,15 @@ class Config(object):
 
     # Kafka Related Settings
     # This stores the information related to the Kafka cluster, all the brokers in the cluster to be used by the engine.
+
+    # This setting would determine whether the message will be submitted to Kafka (if yes), else the processing will
+    # proceed by spawning new threads whenever the call arrives. Value is True/ False (BEWARE: boolean values in
+    # Python is case sensitive ).
+    # Temp-comm: need to code in for newer thread spawning code.
+    WHETHER_SUBMIT_TO_KAFKA = True
+
+    # this is the list of bootstrap-servers, currently kafka-python provides to connect via broker urls
+    # and not by directly connecting to Zookeeper , which the .sh utilities provide.
     KAFKA_BROKER_URLS = ['localhost:9092', ]
 
 class ProductionConfig(Config):

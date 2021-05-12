@@ -104,7 +104,7 @@ root:
 # For every app , its parent package level can be defined here.
 loggers:
     CCM:
-        level: ERROR  # here , this level should be based on the level of whether app is in Debug mode! choice is between INFO/DEBUG, as we log configurations of the app at INFO level.
+        level: DEBUG  # here , this level should be based on the level of whether app is in Debug mode! choice is between INFO/DEBUG, as we log configurations of the app at INFO level.
         handlers: [debug_file_handler, error_file_handler, console, info_file_handler]
         propagate: no # NO propagation beyond this, since this is the root for this app.
 #

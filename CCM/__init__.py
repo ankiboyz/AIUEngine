@@ -21,7 +21,9 @@ def configure_app(application):
     """ This section is default configuration """
     # here we define the class that contains all the configurations
     # 'config.DevelopmentConfig' 'config.ProductionConfig'
+    # This value would need be passed as environ variable it seems
     APP_CONFIG = 'config.DevelopmentConfig'
+
     cfg = import_string(
         APP_CONFIG)()  # all configurations even if they are @property of the class would also be loaded.
 
