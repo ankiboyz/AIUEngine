@@ -54,6 +54,7 @@ def configure_app(application):
     db.init_app(application)
 
 
+
 app = Flask(__name__)
 
 
@@ -75,6 +76,10 @@ logger = logging.getLogger(__name__)
 print(logger.parent, 'parent of CCM logger')
 logger.info("logger set :D")
 
+
+
+
+logger.info(f'CONFIGURATION:::: These are the APP Level settings: {app.config}')
 print(app.config)  # try to have this information emit out only settings which have non null values first & then d rest
 
 # Registering the views Blueprints

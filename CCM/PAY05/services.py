@@ -51,6 +51,7 @@ class CCMHeader:
         # which comes when a immutable object is passed as a default value for the method(wherein the value is gathered
         # at the method creation time) should not come here.
 
+        # here all the input values those have will be taken in , key denotes name of the table column
         ccmhdr = models.CCMMonitorHDR(**kwargs)
         ccmhdr.created_date = datetime.now()
         ccmhdr.updated_date = datetime.now()
@@ -70,7 +71,7 @@ class CCMHeader:
             db.session.close()  # under observation in order to minimize sessions remained open
 
         except Exception as error:
-            logger.error(error)
+            logger.error(error, exc_info=True)
             # print('error', error)
             db.session.rollback()
             db.session.close()  # under observation in order to minimize sessions remained open

@@ -32,7 +32,10 @@ class Config(object):
     # cluster; example as in load balancer scenario. If any specific operations need be done via this engine the
     # ENGINE_ID identifier will be helpful. As far as the IDs are uniquely identifiable any name can be provided to 'em.
     ENGINE_ID = 'EINSTEIN'
-
+    # list of controls to be undertaken by this APP.
+    # WORD OF CAUTION: Kindly ensure the list of controls entered are all Unique!
+    # At every restart of the APP the list of controls is inserted into the DB for the specific EngineID
+    LIST_OF_CONTROLS = ['PAY05', 'TFA02-A', 'TFA02-B', 'TRE07']
 
     '''SQLALCHEMY_ECHO If set to True SQLAlchemy will log all the statements issued to stderr 
     which can be useful for debugging.
@@ -61,6 +64,7 @@ class Config(object):
     # this is the list of bootstrap-servers, currently kafka-python provides to connect via broker urls
     # and not by directly connecting to Zookeeper , which the .sh utilities provide.
     KAFKA_BROKER_URLS = ['localhost:9092', ]
+
 
 class ProductionConfig(Config):
     DEBUG = False

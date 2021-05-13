@@ -18,6 +18,15 @@ class StatusEnum(enum.Enum):
     COMPLETED = 4
 
 
+class KafkaConsumerEnum(enum.Enum):
+    # SUBMITTED = 'SUBMITTED'
+    # PROCESSING = 'PROCESSING'
+    # COMPLETED = 'COMPLETED'
+    # FAILED = 'FAILED'
+    UP = 1
+    DOWN = 2
+
+
 db = SQLAlchemy()
 
 
@@ -62,3 +71,11 @@ class CCMSequences(db.Model):
     table_name = db.Column(db.String(100), primary_key=True)
     column_name = db.Column(db.String(100), primary_key=True)
     sequences = db.Column(db.BigInteger, nullable=False)
+
+
+class CCMControlEngineAssoc(db.Model):
+    __tablename__= 'glt_ccm_xtnd_cntrl_ngn_assoc'
+
+    engine_id = db.Column(db.String(100), primary_key=True)
+    control_id = db.Column(db.String(100), primary_key=True)
+    status = db.Column(db.Enum(KafkaConsumerEnum))
