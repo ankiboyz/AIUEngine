@@ -4,7 +4,7 @@ This structure makes it easier for you to find the code and resources related to
 For example, if you want to find the application logic about PAY05 control,
  then you can go to the PAY05 Blueprint in CCM/pay05.py instead of scrolling through a big app.py (in this specific case
   it is CCM/__init__.py )."""
-
+import config
 from flask import Blueprint, request, jsonify
 from CCM.models import CCMMonitorHDR, CCMonitorDTL, StatusEnum
 import logging
@@ -41,7 +41,7 @@ def submit_job():
 
     # created_date and updated_date will be filled up in the insert/update methods for the
     # particular obj eg CCMHeader and CCMDetail tables
-    ret_op = CCMhdr_obj.insert(control_id='PAY05', operation_type='CCM'
+    ret_op = CCMhdr_obj.insert(control_id='PAY05', operation_type=config.OPERATION_TYPE
                                , parameters=json.dumps(request.args)
                                , start_date=datetime.now()
                                , status=StatusEnum.SUBMITTED)

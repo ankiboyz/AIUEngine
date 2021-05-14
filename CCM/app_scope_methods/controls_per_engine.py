@@ -22,7 +22,18 @@ def list_of_controls_per_engine():
     engine_id = CCM.app.config["ENGINE_ID"]
     control_list = CCM.app.config["LIST_OF_CONTROLS"]
 
+    # Here, making a dictionary with count of the controls out of the list, to identify if any control has been listed
+    # more than once.
+    control_list_dict = {k: control_list.count(k) for k in control_list}
+    duplicate_control_list = [k for k, v in control_list_dict.items() if v > 1]
+    unique_control_list = [k for k, v in control_list_dict.items() if v == 1]
+
+    if len(duplicate_control_list) > 0:     # Report the list of duplicate controls.
+        logger.warning(f'There are some duplicate controls configured for this Engine Id {engine_id} are'
+                       f' {duplicate_control_list}')
+
     logger.info(f'List of Controls by this Engine Id {engine_id} are {control_list}')
+
     with CCM.app.app_context():
         cntrl_ngn_assoc_obj = models.CCMControlEngineAssoc()
         query = cntrl_ngn_assoc_obj.query.filter_by(engine_id=engine_id).all()
@@ -36,7 +47,7 @@ def list_of_controls_per_engine():
             db.session.commit()
 
         # re-insert here
-        for cntrl_id in control_list:
+        for cntrl_id in unique_control_list:
             cntrl_ngn_assoc_obj = models.CCMControlEngineAssoc(control_id=cntrl_id, engine_id=engine_id
                                                                , status=models.KafkaConsumerEnum.DOWN)
 

@@ -8,8 +8,13 @@ _cwd = os.path.dirname(os.path.abspath(__file__))
 """These specific configurations which need to be available even before the application context is made available.
 These are for all the APPs. NO overrides available inside each app for these settings."""
 # LOG_LEVEL = 'ERROR'   # not gets applicable as the app starts the previous loggers are disabled.
+# Below is the value of the control type for CCM that needs to be made available.
+# This section can also store some attributes which might be needed across an app, not necessarily from app_context but
+# as similar to global variables.
+OPERATION_TYPE = 'BCM'
 
 '''All Configurations here DB as well as Logging based on the environment'''
+
 
 class Config(object):
     DEBUG = False
@@ -35,7 +40,7 @@ class Config(object):
     # list of controls to be undertaken by this APP.
     # WORD OF CAUTION: Kindly ensure the list of controls entered are all Unique!
     # At every restart of the APP the list of controls is inserted into the DB for the specific EngineID
-    LIST_OF_CONTROLS = ['PAY05', 'TFA02-A', 'TFA02-B', 'TRE07']
+    LIST_OF_CONTROLS = ['PAY05', 'TFA02-A', 'TFA02-B', 'TRE07', 'TFA02-A']
 
     '''SQLALCHEMY_ECHO If set to True SQLAlchemy will log all the statements issued to stderr 
     which can be useful for debugging.
