@@ -95,7 +95,7 @@ root:
   # This level should also be set by whether the APP is running in DEBUG mode,
   #  else this can be INFO or ERROR or NOTSET (but notset will emit any level message that reaches here propagating)
   #  earlier set as level: NOTSET
-  level: ERROR
+  level: DEBUG
   # Attach handlers for Root Logger
   handlers: [debug_file_handler, error_file_handler, console, info_file_handler]
   propagate: no # the hierarchy stops here, nothing to traverse beyond it!
