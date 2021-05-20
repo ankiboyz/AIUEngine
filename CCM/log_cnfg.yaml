@@ -95,7 +95,7 @@ root:
   # This level should also be set by whether the APP is running in DEBUG mode,
   #  else this can be INFO or ERROR or NOTSET (but notset will emit any level message that reaches here propagating)
   #  earlier set as level: NOTSET
-  level: DEBUG
+  level: DEBUG    # This also need to be set by the application level setting , same as that to the CCM logger.
   # Attach handlers for Root Logger
   handlers: [debug_file_handler, error_file_handler, console, info_file_handler]
   propagate: no # the hierarchy stops here, nothing to traverse beyond it!
@@ -111,4 +111,4 @@ loggers:
 #    <module.x>:
 #        level: DEBUG
 #        handlers: [info_file_handler, error_file_handler, critical_file_handler, debug_file_handler, warn_file_handler]
-#        propogate: yes
+#        propagate: yes

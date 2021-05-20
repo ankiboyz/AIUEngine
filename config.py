@@ -2,6 +2,7 @@
 """"This file contains the configurations for the application - DB, Logging , """
 import os
 
+
 '''Having the DB file at the Current Working Directory'''
 _cwd = os.path.dirname(os.path.abspath(__file__))
 
@@ -49,7 +50,15 @@ class Config(object):
     SQLALCHEMY_DATABASE_URI = 'oracle://SIDDHANT:green123@192.168.2.18:2020/platform'
     SQLALCHEMY_ECHO = False
     SQLALCHEMY_TRACK_MODIFICATIONS = False  # enabled True for now
+    # https://flask-sqlalchemy.palletsprojects.com/en/2.x/api/#models
+    # In debug mode Flask-SQLAlchemy will log all the SQL queries sent to the database. This information is
+    # available until the end of request which makes it possible to easily ensure that the SQL generated is the
+    # one expected on errors or in unittesting. If you don’t want to enable the DEBUG mode for your unittests
+    # you can also enable the query recording by setting the 'SQLALCHEMY_RECORD_QUERIES'
+    # config variable to True. This is automatically enabled if Flask is in testing mode.
+    SQLALCHEMY_RECORD_QUERIES = True
     ORACLE_CLIENT_PATH = r"C:\ORACLEINSTANTCLIENT\instantclient_19_10"
+
     # This has to be default path to provide log config details,in absence of an override in APP,this should prevail.
     # Currently this file is not filled with the logging configuration values.
     # IN case this file is within the project path then use relative path else mention the Absolute path.
@@ -65,6 +74,8 @@ class Config(object):
     # Python is case sensitive ).
     # Temp-comm: need to code in for newer thread spawning code.
     WHETHER_SUBMIT_TO_KAFKA = True
+    # This setting defines the maximum number of consumers to be spawned at one time.
+    MAX_NUM_OF_CONSUMERS_AT_ONE_TIME = 3
 
     # this is the list of bootstrap-servers, currently kafka-python provides to connect via broker urls
     # and not by directly connecting to Zookeeper , which the .sh utilities provide.

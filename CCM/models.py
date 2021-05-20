@@ -12,10 +12,10 @@ class StatusEnum(enum.Enum):
     # PROCESSING = 'PROCESSING'
     # COMPLETED = 'COMPLETED'
     # FAILED = 'FAILED'
-    SUBMITTED = 1
-    PROCESSING = 2
-    FAILED = 3
-    COMPLETED = 4
+    SUBMITTED = 'SUBMITTED'
+    PROCESSING = 'PROCESSING'
+    FAILED = 'FAILED'
+    COMPLETED = 'COMPLETED'
 
 
 class KafkaConsumerEnum(enum.Enum):
@@ -23,8 +23,8 @@ class KafkaConsumerEnum(enum.Enum):
     # PROCESSING = 'PROCESSING'
     # COMPLETED = 'COMPLETED'
     # FAILED = 'FAILED'
-    UP = 1
-    DOWN = 2
+    UP = 'UP'
+    DOWN = 'DOWN'
 
 
 db = SQLAlchemy()
