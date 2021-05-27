@@ -6,12 +6,12 @@ verify_ssl = true
 [dev-packages]
 
 [packages]
-flask = "*"
 flask-sqlalchemy = "==2.5"
 pyyaml = "*"
 cx-oracle = "*"
 kafka-python = "*"
 pandas = "*"
+flask = "==1.1.2"
 
 [requires]
 python_version = "3.6"

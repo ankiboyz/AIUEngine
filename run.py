@@ -19,12 +19,14 @@ def thread_function(name):
         time.sleep(20)
         print("Thread %s: finishing", name)
 
+
 def create_ccm_app():
     # CCM.app.debug = True # This is loaded from the config as DEBUG = True
     CCM.db.create_all(app=CCM.app)   # This creates the DB
 
     # After the app been configured calling the checks for the Controls and Engine_ID association
     # maintains what all controls are to be handled by the particular application
+
     controls_per_engine.list_of_controls_per_engine()
 
     # start a job handler thread

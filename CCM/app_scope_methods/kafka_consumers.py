@@ -10,7 +10,7 @@ import inspect
 import logging
 from kafka import KafkaConsumer
 from commons import general_methods
-
+import pandas as pd
 
 from CCM import models, app
 
@@ -26,12 +26,18 @@ def kafka_consumer_algo():
         query = cntrl_monitor_hdr.query.filter_by(status=models.StatusEnum.SUBMITTED).all()
         logger.debug(f'There are these many jobs to be handled {len(query)}')
 
+        # Finding the consumers those are UP
         cntrl_monitor_ngn_assoc = models.CCMControlEngineAssoc()
-        query_for_consumers = cntrl_monitor_ngn_assoc.query.all()
+        query_for_consumers = cntrl_monitor_ngn_assoc.query.filter_by(status=models.KafkaConsumerEnum.UP
+                                                                      , engine_id=app.config["ENGINE_ID"]).all()
+        consumers_to_awake = app.config["MAX_NUM_OF_CONSUMERS_AT_ONE_TIME"] - len(query_for_consumers)
 
-        print(query_for_consumers, query_for_consumers[0].__dict__, inspect.getmembers(models.CCMControlEngineAssoc()))#  getattr(query_for_consumers,'control_id'),
+        logger.debug(f'Consumers to Awake!!! {consumers_to_awake}')
+        # query_for_consumers = cntrl_monitor_ngn_assoc.query(cntrl_monitor_ngn_assoc.engine_id)
+
+        # print(query_for_consumers, query_for_consumers[0].__dict__, inspect.getmembers(models.CCMControlEngineAssoc()))#  getattr(query_for_consumers,'control_id'),
         print(models.CCMControlEngineAssoc.__dict__.keys())
-        print(dir(query_for_consumers))
+        print(dir(query_for_consumers), 'length', len(query_for_consumers))
         print(models.CCMControlEngineAssoc.__dict__["__table__"])
         print(models.CCMControlEngineAssoc.__dict__["__doc__"])
         print(models.CCMControlEngineAssoc.__dict__["_sa_class_manager"])
@@ -57,6 +63,16 @@ def kafka_consumer_algo():
         print(models.CCMControlEngineAssoc.__dict__["__mapper__"].column_attrs['engine_id'].__getattribute__)
 
         print(db.get_engine())  # this gets the engine
+        flask_sqlalchemy_ngn = db.get_engine()
+        SQL_str= f'SELECT * FROM {models.CCMControlEngineAssoc.__dict__["__table__"]}'
+        print(SQL_str)
+
+        df = pd.read_sql(SQL_str, flask_sqlalchemy_ngn)
+        print(df.to_string(index=False))
+        print(df.dtypes)
+
+        SQL_str1 = f'SELECT * FROM {models.CCMControlEngineAssoc.__dict__["__table__"]}'
+
         general_methods.df_for_models_table(models.CCMControlEngineAssoc, query_for_consumers)
         # we will take the number of configured kafka consumers to be run at one time.
         # We will sort the jobs those need be handled in the descending order of duration from submission.
@@ -64,4 +80,8 @@ def kafka_consumer_algo():
         # Stop once the maximum no. of consumers to be up at one time is reached.
         # The consumer who has completed its job  and has not received any new message , need to be come down by itself.
 
+        SQL_str = general_methods.get_the_sql_str_for_db('SQL_ID_1', app.config["DATABASE_VENDOR"])
 
+        df1 = pd.read_sql(SQL_str, flask_sqlalchemy_ngn)
+        print(df1.to_string(index=False))
+        print(df1.dtypes)

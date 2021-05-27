@@ -28,7 +28,7 @@ def configure_app(application):
         APP_CONFIG)()  # all configurations even if they are @property of the class would also be loaded.
 
     application.config.from_object(cfg)  # will load all the uppercase attributes including properties
-    # app.config.from_object('config')
+    application.config.from_object('config')  # also load the upper case attributes in the config outside of the class as well.
 
     """This section is if configuration's override is present i.e. there is a file config_overrides.py present in the 
     same path as this __init__.py file"""

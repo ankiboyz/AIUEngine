@@ -6,8 +6,9 @@
 # Version
 version: 1
 
-# Disable previously configured loggers
-disable_existing_loggers: true
+# Disable previously configured loggers, b'coz of this value as false the loggers that are initialized before app, those are also logged
+# example the commons.general_methods, with same formatting as devised here.
+disable_existing_loggers: false
 
 # filters definition - filter can be used for filtering of log records as well enriching with additional fields
 filters:

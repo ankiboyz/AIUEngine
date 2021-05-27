@@ -20,6 +20,11 @@ This project mainly has the following ideologies:
    the incoming request, so as to track its entire Lifecycle.
 6. models.py file under every package contains the models for that APP; eg one can find
 models.py under CCM package, which stores all models for CCM APP.  
+7. All the SQL statements executed against the DB are stored in one file list_of_sql_stmnts.py.
+   The file has an SQL_ID and it is appended with the DATABASE_VENDOR property which is maintained
+   in the config.py. Based on the DB vendor the SQL_ID can be altered. The method general_methods.get_the_sql_str_for_db
+   provides the access to the SQL string taking in the input as SQL_ID and the DATABASE_VENDOR as inputs.
+    
 **Points to note**
 1. Since this app is connecting to Oracle database for maintaining some status tables,
 there is a dependency on the oracle client to be available on the OS for the specific 
@@ -40,3 +45,5 @@ For the Kafka Setup:
 We need to have following configuration in order to make use of the Kafka producers and consumers 
 for the project:
     KAFKA-BROKER-URLS : This is a list of urls in case it is a Kafka Cluster, in case needed for greater redundancy.
+
+

@@ -8,11 +8,17 @@ _cwd = os.path.dirname(os.path.abspath(__file__))
 
 """These specific configurations which need to be available even before the application context is made available.
 These are for all the APPs. NO overrides available inside each app for these settings."""
-# LOG_LEVEL = 'ERROR'   # not gets applicable as the app starts the previous loggers are disabled.
+LOG_LEVEL = 'DEBUG'   # not gets applicable as the app starts the previous loggers are disabled.
 # Below is the value of the control type for CCM that needs to be made available.
 # This section can also store some attributes which might be needed across an app, not necessarily from app_context but
 # as similar to global variables.
 OPERATION_TYPE = 'BCM'
+
+# Engine related Settings
+# Engine ID can be used to refer to specific instance of the Engine running, in case multiple are running in d
+# cluster; example as in load balancer scenario. If any specific operations need be done via this engine the
+# ENGINE_ID identifier will be helpful. As far as the IDs are uniquely identifiable any name can be provided to 'em.
+ENGINE_ID = 'EINSTEIN'
 
 '''All Configurations here DB as well as Logging based on the environment'''
 
@@ -33,11 +39,7 @@ class Config(object):
         print(secretkey)
         return secretkey
 
-    # Engine related Settings
-    # Engine ID can be used to refer to specific instance of the Engine running, in case multiple are running in d
-    # cluster; example as in load balancer scenario. If any specific operations need be done via this engine the
-    # ENGINE_ID identifier will be helpful. As far as the IDs are uniquely identifiable any name can be provided to 'em.
-    ENGINE_ID = 'EINSTEIN'
+
     # list of controls to be undertaken by this APP.
     # WORD OF CAUTION: Kindly ensure the list of controls entered are all Unique!
     # At every restart of the APP the list of controls is inserted into the DB for the specific EngineID
@@ -47,6 +49,9 @@ class Config(object):
     which can be useful for debugging.
     '''
     # SQLALCHEMY_DATABASE_URI = 'sqlite:///' + os.path.join(_cwd, 'AIUEngine.db')
+    # For ORACLE , DEFAULT would suffice.
+    # idea is to have 'DEFAULT' for all Dbs where the queries specified in list_of_sql_stmnts.py are compatible.
+    DATABASE_VENDOR = 'DEFAULT'
     SQLALCHEMY_DATABASE_URI = 'oracle://SIDDHANT:green123@192.168.2.18:2020/platform'
     SQLALCHEMY_ECHO = False
     SQLALCHEMY_TRACK_MODIFICATIONS = False  # enabled True for now
@@ -75,7 +80,7 @@ class Config(object):
     # Temp-comm: need to code in for newer thread spawning code.
     WHETHER_SUBMIT_TO_KAFKA = True
     # This setting defines the maximum number of consumers to be spawned at one time.
-    MAX_NUM_OF_CONSUMERS_AT_ONE_TIME = 3
+    MAX_NUM_OF_CONSUMERS_AT_ONE_TIME = 2
 
     # this is the list of bootstrap-servers, currently kafka-python provides to connect via broker urls
     # and not by directly connecting to Zookeeper , which the .sh utilities provide.
