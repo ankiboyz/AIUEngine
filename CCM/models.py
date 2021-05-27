@@ -26,6 +26,13 @@ class KafkaConsumerEnum(enum.Enum):
     UP = 'UP'
     DOWN = 'DOWN'
 
+class YesNoEnum(enum.Enum):
+    # SUBMITTED = 'SUBMITTED'
+    # PROCESSING = 'PROCESSING'
+    # COMPLETED = 'COMPLETED'
+    # FAILED = 'FAILED'
+    Y = 'Y'
+    N = 'N'
 
 db = SQLAlchemy()
 
@@ -78,4 +85,5 @@ class CCMControlEngineAssoc(db.Model):
 
     engine_id = db.Column(db.String(100), primary_key=True)
     control_id = db.Column(db.String(100), primary_key=True)
+    is_multiproc = db.Column(db.Enum(YesNoEnum))
     status = db.Column(db.Enum(KafkaConsumerEnum))

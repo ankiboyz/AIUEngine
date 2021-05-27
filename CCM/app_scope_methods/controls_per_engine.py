@@ -21,6 +21,7 @@ db = models.db
 def list_of_controls_per_engine():
     engine_id = CCM.app.config["ENGINE_ID"]
     control_list = CCM.app.config["LIST_OF_CONTROLS"]
+    controls_requiring_multiproc = CCM.app.config["LIST_OF_MULTI_PROC_CONTROLS"]
 
     # Here, making a dictionary with count of the controls out of the list, to identify if any control has been listed
     # more than once.
@@ -48,7 +49,14 @@ def list_of_controls_per_engine():
 
         # re-insert here
         for cntrl_id in unique_control_list:
+
+            if cntrl_id in controls_requiring_multiproc:
+                multiproc = models.YesNoEnum.Y
+            else:
+                multiproc = models.YesNoEnum.N
+
             cntrl_ngn_assoc_obj = models.CCMControlEngineAssoc(control_id=cntrl_id, engine_id=engine_id
+                                                               , is_multiproc=multiproc
                                                                , status=models.KafkaConsumerEnum.DOWN)
 
             db.session.add(cntrl_ngn_assoc_obj)

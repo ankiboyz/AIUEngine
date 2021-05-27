@@ -22,8 +22,8 @@ the method general_methods.get_the_sql_str_for_db is responsible for resolving t
 # 			AND C.STATUS = 'DOWN'
 # 	ORDER BY A.MIN_START_DATE ASC
 
-# SQL_ID_1 : Query to get the control_Ids for whom the consumers need be launched , getting the Ids with min start_dates
-# whose consumers are down.
+# SQL_ID_1 : Query to get the control_Ids for whom the consumers need be launched from this Engine_ID , getting the Ids
+# with min start_dates whose consumers are down.
 
 SQL_ID_1_DEFAULT = f'SELECT A.CONTROL_ID, A.MIN_START_DATE, B.ID, C.STATUS FROM (select CONTROL_ID, MIN(START_DATE) AS \
                    MIN_START_DATE from {models.CCMMonitorHDR.__dict__["__table__"]} WHERE STATUS IN (\'SUBMITTED\') GROUP BY CONTROL_ID) A, \

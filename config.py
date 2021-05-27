@@ -45,6 +45,11 @@ class Config(object):
     # At every restart of the APP the list of controls is inserted into the DB for the specific EngineID
     LIST_OF_CONTROLS = ['PAY05', 'TFA02-A', 'TFA02-B', 'TRE07', 'TFA02-A']
 
+    # Out of the list of controls (as specified in LIST_OF_CONTROLS) below lists which all controls need to have
+    # multiprocessing mode i.e. wherein the control processing would require CPU of engine to do some intermediary
+    # processing and does not entirely depend on the aggregation pipeline @mongo.
+    LIST_OF_MULTI_PROC_CONTROLS = ['TRE07']
+
     '''SQLALCHEMY_ECHO If set to True SQLAlchemy will log all the statements issued to stderr 
     which can be useful for debugging.
     '''
@@ -85,6 +90,10 @@ class Config(object):
     # this is the list of bootstrap-servers, currently kafka-python provides to connect via broker urls
     # and not by directly connecting to Zookeeper , which the .sh utilities provide.
     KAFKA_BROKER_URLS = ['localhost:9092', ]
+
+    # Kafka Consumer properties
+    KAFKA_CONSUMER_AUTO_OFFSET_RESET = 'earliest'   # values possible earliest or latest
+    KAFKA_CONSUMER_ENABLE_AUTO_COMMIT = True
 
 
 class ProductionConfig(Config):
