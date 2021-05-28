@@ -11,6 +11,8 @@ import logging
 from kafka import KafkaConsumer
 from commons import general_methods
 import pandas as pd
+import threading
+import config
 
 from CCM import models, app
 
@@ -106,10 +108,32 @@ def kafka_consumer_algo():
             # we will take then these top n rows.
 
             wrk_set_num_rows = min(len(df_consumers_to_be_awakened.index), consumers_that_can_be_awakened)
-            print('Hiii consumers to be awakened')
-            print(df_consumers_to_be_awakened.iloc[:wrk_set_num_rows])
+            # print('Hiii consumers to be awakened')
+            logger.debug(f'consumers to be awakened {df_consumers_to_be_awakened.iloc[:wrk_set_num_rows].to_string(index=False)}')
+            # print(df_consumers_to_be_awakened.iloc[:wrk_set_num_rows])
 
-            making_consumer_up('PAY05','PAY05',app)
+            # Here we get a series object of the consumers to be awakened:
+            # print(df_consumers_to_be_awakened.iloc[:wrk_set_num_rows]["control_id"], type(df_consumers_to_be_awakened.iloc[:wrk_set_num_rows]["control_id"]))
+
+            consumers_to_be_awakened_series = df_consumers_to_be_awakened.iloc[:wrk_set_num_rows]["control_id"]
+            logger.debug(f'consumers to be awakened series {consumers_to_be_awakened_series}')
+
+            for items in consumers_to_be_awakened_series.iteritems():
+                print(items[1]) # gather the second index of the tuple to get the control id.
+                kfk_control_id = items[1] # topic id and consumer group id is same as that of the control_id
+
+                x = threading.Thread(target=making_consumer_up, args=(kfk_control_id, kfk_control_id, app,), daemon=True)
+                try:
+                    x.start()
+                    logger.debug(f'started {threading.current_thread().name} for {kfk_control_id}')
+
+
+
+                except Exception as error:
+                    logger.error(error, exc_info=True)
+
+
+            # making_consumer_up('PAY05','PAY05',app)
             pass
 
 
@@ -117,10 +141,47 @@ def making_consumer_up(topic_id, group_id, appln_cntxt):
     ''' This method is used to bring up the consumer '''
 
     from kafka import KafkaConsumer
+    try:
+        consumer = KafkaConsumer(topic_id, bootstrap_servers=["localhost:9092"], auto_offset_reset=appln_cntxt.config["KAFKA_CONSUMER_AUTO_OFFSET_RESET"]
+                                 , enable_auto_commit=appln_cntxt.config["KAFKA_CONSUMER_ENABLE_AUTO_COMMIT"], group_id=group_id)
 
-    consumer = KafkaConsumer(topic_id, bootstrap_servers=["localhost:9092"], auto_offset_reset=appln_cntxt.config["KAFKA_CONSUMER_AUTO_OFFSET_RESET"]
-                             , enable_auto_commit=appln_cntxt.config["KAFKA_CONSUMER_ENABLE_AUTO_COMMIT"], group_id=group_id)
+        logger.debug(f'Hiii I am in the consumer for {topic_id} for the thread {threading.get_ident()} {threading.current_thread().name}')
 
-    print('Hiii I am in the consumer')
-    for message in consumer:
-        print('Hiii this is the message from Kafka',message)
+        with appln_cntxt.app_context():
+            cntrl_monitor_ngn_assoc = models.CCMControlEngineAssoc()
+
+            kfk_control_id = topic_id
+            db_row_4_status_upd = cntrl_monitor_ngn_assoc.query.filter_by(control_id=kfk_control_id
+                                                                          , engine_id=appln_cntxt.config["ENGINE_ID"]).all()
+            for row in db_row_4_status_upd:
+                logger.info(f' Kafka Consumer control Id being updated for status is  {row.control_id}')
+                row.status = models.KafkaConsumerEnum.UP
+                print(f' row modified is {row}')
+
+                db.session.commit()
+
+        for message in consumer:
+            print(f'Hiii this is the message from Kafka for consumer {topic_id}  {message} {threading.current_thread().name}')
+
+    except Exception as error:
+        logger.error(error, exc_info=True)
+        # consumer.close()
+
+    finally:
+        # consumer.close()
+        # print(f'Hiii  I am closed -- this is the message from Kafka for consumer {topic_id}  {message} {threading.current_thread().name}')
+
+        # update the status to DOWN for this engine's control_Id
+        with appln_cntxt.app_context():
+            cntrl_monitor_ngn_assoc = models.CCMControlEngineAssoc()
+
+            print('finally block called')
+            kfk_control_id = topic_id
+            db_row_4_status_upd = cntrl_monitor_ngn_assoc.query.filter_by(control_id=kfk_control_id
+                                                                          , engine_id=appln_cntxt.config["ENGINE_ID"]).all() # here in finally the app_context was not alive
+            for row in db_row_4_status_upd:
+                logger.info(f' Kafka Consumer control Id being updated for status is  {row.control_id}')
+                row.status = models.KafkaConsumerEnum.DOWN
+                print(f' row modified is {row}')
+
+                db.session.commit()

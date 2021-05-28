@@ -16,7 +16,7 @@ def thread_function(name):
         logger.info("Thread %s: starting", name)
         job_handler.list_of_jobs_to_be_handled()
         print("Thread %s: starting", name)
-        time.sleep(20)
+        time.sleep(40)
         print("Thread %s: finishing", name)
 
 
