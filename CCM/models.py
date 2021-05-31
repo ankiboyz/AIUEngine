@@ -1,5 +1,15 @@
+#models.py
+'''
+Author : Ankur Saxena
+
+This file contains all the DB tables needed by the CCM App.
+'''
+
 from flask_sqlalchemy import SQLAlchemy
 import enum
+import logging
+
+logger = logging.getLogger(__name__)
 
 status_values = ('SUBMITTED', 'PROCESSING', 'FAILED', 'COMPLETED')
 print(dir(enum.Enum))
@@ -87,3 +97,39 @@ class CCMControlEngineAssoc(db.Model):
     control_id = db.Column(db.String(100), primary_key=True)
     is_multiproc = db.Column(db.Enum(YesNoEnum))
     status = db.Column(db.Enum(KafkaConsumerEnum))
+
+
+def consumer_status_update_per_control_engine(topic_id, row_status, appln_cntxt):
+
+    '''
+    Objective : The function changes the status of the consumer , as per the engine in the DB.
+
+    Input: Following are the inputs it needs:
+        1. topic_id ; this is the control_id
+        2. row_status : whether the control_id ie the consumer with name of control id need be brought up or down;
+                        denoted by the input values as UP or DOWN.
+        3. appln_cntxt: this is the app that needs to be passed in for the flask-sqlalchemy environment to work; and
+                        also to get the config dictionary.
+        '''
+
+    with appln_cntxt.app_context():
+        cntrl_monitor_ngn_assoc = CCMControlEngineAssoc()
+
+        print('finally block called')
+        kfk_control_id = topic_id
+
+        db_row_4_status_upd = cntrl_monitor_ngn_assoc.query.filter_by(control_id=kfk_control_id
+                                                                      , engine_id=appln_cntxt.config["ENGINE_ID"]).all()
+
+        for row in db_row_4_status_upd:
+            logger.info(f' Kafka Consumer control Id being updated for status is  {row.control_id}')
+
+            if row_status == 'DOWN':
+                row.status = KafkaConsumerEnum.DOWN  # make it DOWN
+
+            if row_status == 'UP':
+                row.status = KafkaConsumerEnum.UP  # make it UP
+
+            print(f' row modified is {row}')
+
+            db.session.commit()

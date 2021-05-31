@@ -36,46 +36,9 @@ def kafka_consumer_algo():
 
         logger.info(f'Consumers that can be Awakened for this Engine_ID {app.config["ENGINE_ID"]} are '
                      f'{consumers_that_can_be_awakened}')
-        # query_for_consumers = cntrl_monitor_ngn_assoc.query(cntrl_monitor_ngn_assoc.engine_id)
-
-        # print(query_for_consumers, query_for_consumers[0].__dict__, inspect.getmembers(models.CCMControlEngineAssoc()))#  getattr(query_for_consumers,'control_id'),
-        # print(models.CCMControlEngineAssoc.__dict__.keys())
-        # print(dir(query_for_consumers), 'length', len(query_for_consumers))
-        # print(models.CCMControlEngineAssoc.__dict__["__table__"])
-        # print(models.CCMControlEngineAssoc.__dict__["__doc__"])
-        # print(models.CCMControlEngineAssoc.__dict__["_sa_class_manager"])
-        # print(models.CCMControlEngineAssoc.__dict__["__mapper__"])   # mapped class CCMControlEngineAssoc->glt_ccm_xtnd_cntrl_ngn_assoc
-
-        # This below was helpful -->
-        # print(models.CCMControlEngineAssoc.__dict__["__mapper__"].column_attrs.keys())  # gives the column names
-        # ['Comparator', '__class__', '__clause_element__', '__delattr__', '__dir__', '__doc__', '__eq__', '__format__', '__ge__
-        # ', '__getattr__', '__getattribute__', '__gt__', '__hash__', '__init__', '__init_subclass__', '__le__', '__lt__',
-        # '__module__', '__ne__', '__new__', '__reduce__', '__reduce_ex__', '__repr__', '__setattr__', '__sizeof__', '__slots__',
-        # '__str__', '__subclasshook__', '_all_strategies', '_cache_key_traversal', '_configure_finished', '_configure_started',
-        # '_creation_order', '_default_path_loader_key', '_deferred_column_loader', '_fallback_getattr', '_gen_cache_key',
-        # '_generate_cache_attrs', '_generate_cache_key', '_generate_cache_key_for_object', '_get_context_loader',
-        # '_get_strategy', '_getcommitted', '_is_internal_proxy', '_is_polymorphic_discriminator', '_mapped_by_synonym',
-        # '_memoized_attr__default_path_loader_key', '_memoized_attr__deferred_column_loader', '_memoized_attr__raise_column_loader',
-        # '_memoized_attr__wildcard_token', '_memoized_attr_info', '_orig_columns', '_raise_column_loader', '_should_log_debug',
-        # '_should_log_info', '_strategies', '_strategy_lookup', '_wildcard_token', 'active_history', 'cascade', 'cascade_iterator',
-        # 'class_attribute', 'columns', 'comparator_factory', 'copy', 'create_row_processor', 'deferred', 'descriptor', 'do_init',
-        # 'doc', 'expire_on_flush', 'expression', 'extension_type', 'group', 'info', 'inherit_cache', 'init', 'instrument',
-        # 'instrument_class', 'is_aliased_class', 'is_attribute', 'is_bundle', 'is_clause_element', 'is_instance', 'is_mapper',
-        # 'is_property', 'is_selectable', 'key', 'logger', 'merge', 'parent', 'post_instrument_class', 'raiseload', 'set_parent',
-        # 'setup', 'strategy', 'strategy_for', 'strategy_key', 'strategy_wildcard_key']
-        # print(dir(models.CCMControlEngineAssoc.__dict__["__mapper__"].column_attrs['engine_id']))
-        # print(models.CCMControlEngineAssoc.__dict__["__mapper__"].column_attrs['engine_id'].__getattribute__)
 
         logger.debug(db.get_engine())  # this gets the engine
         flask_sqlalchemy_ngn = db.get_engine()
-        # SQL_str = f'SELECT * FROM {models.CCMControlEngineAssoc.__dict__["__table__"]}'
-        # print(SQL_str)
-        #
-        # df = pd.read_sql(SQL_str, flask_sqlalchemy_ngn)
-        # print(df.to_string(index=False))
-        # print(df.dtypes)
-
-        # SQL_str1 = f'SELECT * FROM {models.CCMControlEngineAssoc.__dict__["__table__"]}'
 
         # general_methods.df_for_models_table(models.CCMControlEngineAssoc, query_for_consumers)
 
@@ -108,30 +71,23 @@ def kafka_consumer_algo():
             # we will take then these top n rows.
 
             wrk_set_num_rows = min(len(df_consumers_to_be_awakened.index), consumers_that_can_be_awakened)
-            # print('Hiii consumers to be awakened')
             logger.debug(f'consumers to be awakened {df_consumers_to_be_awakened.iloc[:wrk_set_num_rows].to_string(index=False)}')
-            # print(df_consumers_to_be_awakened.iloc[:wrk_set_num_rows])
 
             # Here we get a series object of the consumers to be awakened:
-            # print(df_consumers_to_be_awakened.iloc[:wrk_set_num_rows]["control_id"], type(df_consumers_to_be_awakened.iloc[:wrk_set_num_rows]["control_id"]))
-
             consumers_to_be_awakened_series = df_consumers_to_be_awakened.iloc[:wrk_set_num_rows]["control_id"]
             logger.debug(f'consumers to be awakened series {consumers_to_be_awakened_series}')
 
             for items in consumers_to_be_awakened_series.iteritems():
-                print(items[1]) # gather the second index of the tuple to get the control id.
-                kfk_control_id = items[1] # topic id and consumer group id is same as that of the control_id
+                print(items[1])     # gather the second index of the tuple to get the control id.
+                kfk_control_id = items[1]   # topic id and consumer group id is same as that of the control_id
 
                 x = threading.Thread(target=making_consumer_up, args=(kfk_control_id, kfk_control_id, app,), daemon=True)
                 try:
                     x.start()
-                    logger.debug(f'started {threading.current_thread().name} for {kfk_control_id}')
-
-
+                    logger.debug(f'started new thread by main thread {threading.current_thread().name} for {kfk_control_id}')
 
                 except Exception as error:
                     logger.error(error, exc_info=True)
-
 
             # making_consumer_up('PAY05','PAY05',app)
             pass
@@ -141,47 +97,66 @@ def making_consumer_up(topic_id, group_id, appln_cntxt):
     ''' This method is used to bring up the consumer '''
 
     from kafka import KafkaConsumer
+    is_consumer_set = 'N'
     try:
         consumer = KafkaConsumer(topic_id, bootstrap_servers=["localhost:9092"], auto_offset_reset=appln_cntxt.config["KAFKA_CONSUMER_AUTO_OFFSET_RESET"]
                                  , enable_auto_commit=appln_cntxt.config["KAFKA_CONSUMER_ENABLE_AUTO_COMMIT"], group_id=group_id)
 
         logger.debug(f'Hiii I am in the consumer for {topic_id} for the thread {threading.get_ident()} {threading.current_thread().name}')
-
-        with appln_cntxt.app_context():
-            cntrl_monitor_ngn_assoc = models.CCMControlEngineAssoc()
-
-            kfk_control_id = topic_id
-            db_row_4_status_upd = cntrl_monitor_ngn_assoc.query.filter_by(control_id=kfk_control_id
-                                                                          , engine_id=appln_cntxt.config["ENGINE_ID"]).all()
-            for row in db_row_4_status_upd:
-                logger.info(f' Kafka Consumer control Id being updated for status is  {row.control_id}')
-                row.status = models.KafkaConsumerEnum.UP
-                print(f' row modified is {row}')
-
-                db.session.commit()
-
-        for message in consumer:
-            print(f'Hiii this is the message from Kafka for consumer {topic_id}  {message} {threading.current_thread().name}')
+        is_consumer_set = 'Y'
 
     except Exception as error:
         logger.error(error, exc_info=True)
         # consumer.close()
 
-    finally:
-        # consumer.close()
-        # print(f'Hiii  I am closed -- this is the message from Kafka for consumer {topic_id}  {message} {threading.current_thread().name}')
+    if is_consumer_set == 'Y':
+        # set the status of consumer UP in DB
+        models.consumer_status_update_per_control_engine(topic_id, 'UP', appln_cntxt)
 
-        # update the status to DOWN for this engine's control_Id
-        with appln_cntxt.app_context():
-            cntrl_monitor_ngn_assoc = models.CCMControlEngineAssoc()
+        # code shifted to the method
+        # with appln_cntxt.app_context():
+        #     cntrl_monitor_ngn_assoc = models.CCMControlEngineAssoc()
+        #
+        #     kfk_control_id = topic_id
+        #     db_row_4_status_upd = cntrl_monitor_ngn_assoc.query.filter_by(control_id=kfk_control_id
+        #                                                                   , engine_id=appln_cntxt.config["ENGINE_ID"]).all()
+        #     for row in db_row_4_status_upd:
+        #         logger.info(f' Kafka Consumer control Id being updated for status is  {row.control_id}')
+        #         row.status = models.KafkaConsumerEnum.UP        # make it UP
+        #         print(f' row modified is {row}')
+        #
+        #         db.session.commit()
 
-            print('finally block called')
-            kfk_control_id = topic_id
-            db_row_4_status_upd = cntrl_monitor_ngn_assoc.query.filter_by(control_id=kfk_control_id
-                                                                          , engine_id=appln_cntxt.config["ENGINE_ID"]).all() # here in finally the app_context was not alive
-            for row in db_row_4_status_upd:
-                logger.info(f' Kafka Consumer control Id being updated for status is  {row.control_id}')
-                row.status = models.KafkaConsumerEnum.DOWN
-                print(f' row modified is {row}')
+        try:
+            for message in consumer:
+                print(f'Hiii this is the message from Kafka for consumer {topic_id} and this is {message} '
+                      f'from the thread {threading.current_thread().name}')
 
-                db.session.commit()
+        except Exception as error:
+            logger.error(error, exc_info=True)
+            # consumer.close()
+
+        # in case the consumer abruptly/cleanly  goes down -- this block should always be executed to make consumer
+        # status back to DOWN
+        finally:
+
+            consumer.close()
+            logger.debug(f'Hiii  I am closed -- this is the message from Kafka for consumer {topic_id} '
+                         f'from the thread {threading.current_thread().name}')
+
+            # update the status to DOWN for this engine's control_Id
+            models.consumer_status_update_per_control_engine(topic_id, 'DOWN', appln_cntxt)
+            # code shifted to a method
+            # with appln_cntxt.app_context():
+            #     cntrl_monitor_ngn_assoc = models.CCMControlEngineAssoc()
+            #
+            #     print('finally block called')
+            #     kfk_control_id = topic_id
+            #     db_row_4_status_upd = cntrl_monitor_ngn_assoc.query.filter_by(control_id=kfk_control_id
+            #                                                                   , engine_id=appln_cntxt.config["ENGINE_ID"]).all() # here in finally the app_context was not alive
+            #     for row in db_row_4_status_upd:
+            #         logger.info(f' Kafka Consumer control Id being updated for status is  {row.control_id}')
+            #         row.status = models.KafkaConsumerEnum.DOWN  # make it down
+            #         print(f' row modified is {row}')
+            #
+            #         db.session.commit()
