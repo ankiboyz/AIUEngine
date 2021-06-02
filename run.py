@@ -13,11 +13,13 @@ cx_Oracle.init_oracle_client(lib_dir=CCM.app.config["ORACLE_CLIENT_PATH"])
 
 def thread_function(name):
     while True:
-        logger.info("Thread %s: starting", name)
+        logger.info("JOB_HANDLER_THREAD Thread %s: starting", name)
         job_handler.list_of_jobs_to_be_handled()
-        print("Thread %s: starting", name)
-        time.sleep(40)
-        print("Thread %s: finishing", name)
+        logger.debug(f' The JSM JOB_HANDLER_THREAD Main Daemon Thread loop starting')
+        # print("Thread %s: starting", name)
+        time.sleep(CCM.app.config["JOB_HANDLER_THREAD_POLL_FREQUENCY"])      # make it configurable the sleep time of main daemon
+        logger.debug(f' The JSM JOB_HANDLER_THREAD Main Daemon Thread loop finishing')
+        logger.info("JOB_HANDLER_THREAD Thread %s: finishing", name)
 
 
 def create_ccm_app():
@@ -30,11 +32,11 @@ def create_ccm_app():
     controls_per_engine.list_of_controls_per_engine()
 
     # start a job handler thread
-    x = threading.Thread(target=thread_function, args=(1,), daemon=True)
-    logger.info("Main : before running thread")
+    x = threading.Thread(target=thread_function, args=("JOB_HANDLER_THREAD",), daemon=True)
+    logger.info("Main : JOB_HANDLER_THREAD before running thread")
     x.start()
 
-    CCM.app.run()
+    return CCM.app
 
 
 if __name__ == "__main__":
@@ -42,4 +44,8 @@ if __name__ == "__main__":
     # app.debug = True
     # db.create_all(app=app)
     # app.run()
-    create_ccm_app()
+    appln = create_ccm_app()
+    try:
+        appln.run()
+    finally:
+        print("Finally block in the application stop ")

@@ -8,11 +8,12 @@
 
 import inspect
 import logging
-from kafka import KafkaConsumer
+from kafka import KafkaConsumer, BrokerConnection
 from commons import general_methods
 import pandas as pd
 import threading
 import config
+# import asyncio
 
 from CCM import models, app
 
@@ -77,32 +78,43 @@ def kafka_consumer_algo():
             consumers_to_be_awakened_series = df_consumers_to_be_awakened.iloc[:wrk_set_num_rows]["control_id"]
             logger.debug(f'consumers to be awakened series {consumers_to_be_awakened_series}')
 
+            threads_spawned_list = list()
+
             for items in consumers_to_be_awakened_series.iteritems():
                 print(items[1])     # gather the second index of the tuple to get the control id.
                 kfk_control_id = items[1]   # topic id and consumer group id is same as that of the control_id
 
+                # Invoking a thread per consumer given the upper limit of the threads those can be spawned.
                 x = threading.Thread(target=making_consumer_up, args=(kfk_control_id, kfk_control_id, app,), daemon=True)
                 try:
                     x.start()
                     logger.debug(f'started new thread by main thread {threading.current_thread().name} for {kfk_control_id}')
+                    threads_spawned_list.append(x)
 
                 except Exception as error:
                     logger.error(error, exc_info=True)
 
             # making_consumer_up('PAY05','PAY05',app)
+            logger.info(f'List of threads for the consumers spawned is {threads_spawned_list}')
             pass
 
 
 def making_consumer_up(topic_id, group_id, appln_cntxt):
     ''' This method is used to bring up the consumer '''
 
-    from kafka import KafkaConsumer
+    # import happening here , since it can be called within the thread.
+    from kafka import KafkaConsumer, BrokerConnection
     is_consumer_set = 'N'
-    try:
-        consumer = KafkaConsumer(topic_id, bootstrap_servers=["localhost:9092"], auto_offset_reset=appln_cntxt.config["KAFKA_CONSUMER_AUTO_OFFSET_RESET"]
-                                 , enable_auto_commit=appln_cntxt.config["KAFKA_CONSUMER_ENABLE_AUTO_COMMIT"], group_id=group_id)
+    engine_id = appln_cntxt.config["ENGINE_ID"]
 
-        logger.debug(f'Hiii I am in the consumer for {topic_id} for the thread {threading.get_ident()} {threading.current_thread().name}')
+    try:
+        consumer = KafkaConsumer(topic_id, bootstrap_servers=appln_cntxt.config["KAFKA_BROKER_URLS"]
+                                 , auto_offset_reset=appln_cntxt.config["KAFKA_CONSUMER_AUTO_OFFSET_RESET"]
+                                 , enable_auto_commit=appln_cntxt.config["KAFKA_CONSUMER_ENABLE_AUTO_COMMIT"]
+                                 , group_id=group_id)
+
+        logger.debug(f'Hiii I am in the consumer for {topic_id} for the thread {threading.get_ident()} '
+                     f'{threading.current_thread().name}')
         is_consumer_set = 'Y'
 
     except Exception as error:
@@ -128,9 +140,40 @@ def making_consumer_up(topic_id, group_id, appln_cntxt):
         #         db.session.commit()
 
         try:
-            for message in consumer:
-                print(f'Hiii this is the message from Kafka for consumer {topic_id} and this is {message} '
-                      f'from the thread {threading.current_thread().name}')
+            # for message in consumer:
+            timeout_in_ms = appln_cntxt.config["KAFKA_CONSUMER_POLL_TIMEOUT_MS"]
+            consecutive_no_recs_to_signal_exit = appln_cntxt.config["KAFKA_CONSUMER_CONSECUTIVE_NO_RECS_TO_SIGNAL_EXIT"]
+            count_consec_empty = 0
+
+            while True:
+                message = consumer.poll(timeout_ms=timeout_in_ms, max_records=1, update_offsets=True)
+
+                # Only checks for consecutive values been empty
+                if not message or len(message) == 0:
+                    count_consec_empty = count_consec_empty + 1
+                else:
+                    count_consec_empty = 0
+                    logger.info(f'Hiii this is the message from Kafka for consumer {topic_id} and this is {message} '
+                                f'from the thread {threading.current_thread().name}')
+
+                if count_consec_empty >= consecutive_no_recs_to_signal_exit:
+                    logger.info(f' The consecutive consumer polls, counted as {count_consec_empty}, '
+                                f' for the consumer {topic_id} '
+                                f' from the thread {threading.current_thread().name} have resulted in no messages been '
+                                f' fetched , hence gracefully exiting to make way for other consumers'
+                                )
+                    break
+
+                # Below code did not help to resolve for the case when the Kafka server down while consumer listening
+                # for messages.
+                # important thing to note here is even if the Kafka server goes down no exception is caught here
+                # # so we need to check for the Kafka connection here as follows.
+                # if consumer.bootstrap_connected():
+                #
+                #     print(f'Hiii this is the message from Kafka for consumer {topic_id} and this is {message} '
+                #           f'from the thread {threading.current_thread().name}')
+                # else:
+                #     raise Exception(f'Kafka Server not reachable from the consumer {topic_id} and engine {engine_id}')
 
         except Exception as error:
             logger.error(error, exc_info=True)
@@ -153,10 +196,9 @@ def making_consumer_up(topic_id, group_id, appln_cntxt):
             #     print('finally block called')
             #     kfk_control_id = topic_id
             #     db_row_4_status_upd = cntrl_monitor_ngn_assoc.query.filter_by(control_id=kfk_control_id
-            #                                                                   , engine_id=appln_cntxt.config["ENGINE_ID"]).all() # here in finally the app_context was not alive
+            #        , engine_id=appln_cntxt.config["ENGINE_ID"]).all() # here in finally the app_context was not alive
             #     for row in db_row_4_status_upd:
             #         logger.info(f' Kafka Consumer control Id being updated for status is  {row.control_id}')
             #         row.status = models.KafkaConsumerEnum.DOWN  # make it down
             #         print(f' row modified is {row}')
-            #
             #         db.session.commit()

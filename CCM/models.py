@@ -122,7 +122,7 @@ def consumer_status_update_per_control_engine(topic_id, row_status, appln_cntxt)
                                                                       , engine_id=appln_cntxt.config["ENGINE_ID"]).all()
 
         for row in db_row_4_status_upd:
-            logger.info(f' Kafka Consumer control Id being updated for status is  {row.control_id}')
+            logger.info(f' Kafka Consumer control Id being updated for status, to be set as {row_status}, is  {row.control_id}')
 
             if row_status == 'DOWN':
                 row.status = KafkaConsumerEnum.DOWN  # make it DOWN
@@ -130,6 +130,5 @@ def consumer_status_update_per_control_engine(topic_id, row_status, appln_cntxt)
             if row_status == 'UP':
                 row.status = KafkaConsumerEnum.UP  # make it UP
 
-            print(f' row modified is {row}')
-
             db.session.commit()
+            print(f' row modified is {row}')

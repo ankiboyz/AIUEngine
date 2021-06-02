@@ -14,6 +14,9 @@ LOG_LEVEL = 'DEBUG'   # not gets applicable as the app starts the previous logge
 # as similar to global variables.
 OPERATION_TYPE = 'BCM'
 
+# Main daemon thread for handling jobs in seconds
+JOB_HANDLER_THREAD_POLL_FREQUENCY = 40
+
 # Engine related Settings
 # Engine ID can be used to refer to specific instance of the Engine running, in case multiple are running in d
 # cluster; example as in load balancer scenario. If any specific operations need be done via this engine the
@@ -94,6 +97,11 @@ class Config(object):
     # Kafka Consumer properties
     KAFKA_CONSUMER_AUTO_OFFSET_RESET = 'earliest'   # values possible earliest or latest
     KAFKA_CONSUMER_ENABLE_AUTO_COMMIT = True
+    # Kafka Consumer poll timeout in Milliseconds
+    KAFKA_CONSUMER_POLL_TIMEOUT_MS = 10000
+    # This is the number of count if gathered by the consumer during consecutive polls as to not having any message
+    # then the consumer will come down to give way to other consumers.
+    KAFKA_CONSUMER_CONSECUTIVE_NO_RECS_TO_SIGNAL_EXIT = 2
 
 
 class ProductionConfig(Config):
