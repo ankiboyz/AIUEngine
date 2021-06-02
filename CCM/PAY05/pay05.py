@@ -36,12 +36,15 @@ def submit_job():
     print(logger.parent, 'parent of logger of pay03 module')  # Here,the parent was coming as CCM.(chief of this APP)
     logger.info("I am in PAY05 with args as {0}".format(request.args))
 
+    # Gathering the control ID from the request params
+    control_id = request.args.get('CONTROL_ID', 'NONE_GATHERED')
+
     print(request.args, jsonify(request.args), json.dumps(request.args))
     CCMhdr_obj = services.CCMHeader()
 
     # created_date and updated_date will be filled up in the insert/update methods for the
     # particular obj eg CCMHeader and CCMDetail tables
-    ret_op = CCMhdr_obj.insert(control_id='PAY05', operation_type=config.OPERATION_TYPE
+    ret_op = CCMhdr_obj.insert(control_id=control_id, operation_type=config.OPERATION_TYPE
                                , parameters=json.dumps(request.args)
                                , start_date=datetime.now()
                                , status=StatusEnum.SUBMITTED)

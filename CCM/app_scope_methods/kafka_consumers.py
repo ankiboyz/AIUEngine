@@ -7,13 +7,14 @@
 """
 
 import inspect
-import logging
+import logging, json
 from kafka import KafkaConsumer, BrokerConnection
 from commons import general_methods
 import pandas as pd
 import threading
 import config
 # import asyncio
+from CCM.app_scope_methods import control_processing
 
 from CCM import models, app
 
@@ -148,13 +149,30 @@ def making_consumer_up(topic_id, group_id, appln_cntxt):
             while True:
                 message = consumer.poll(timeout_ms=timeout_in_ms, max_records=1, update_offsets=True)
 
+                logger.info(f'Hiii this is the message from Kafka for consumer {topic_id} and this is {message} '
+                            f'from the thread {threading.current_thread().name}')
                 # Only checks for consecutive values been empty
                 if not message or len(message) == 0:
                     count_consec_empty = count_consec_empty + 1
+
                 else:
                     count_consec_empty = 0
                     logger.info(f'Hiii this is the message from Kafka for consumer {topic_id} and this is {message} '
                                 f'from the thread {threading.current_thread().name}')
+
+                    # Need to process the message here -- call a method and that method will invoke the processing of
+                    # the job ID : message will only have the ID and the Control_ID : will interface with the
+                    # detail table and also update status of the header table.
+
+                    message_values_list = [consumer_rec_list for consumer_rec_list in message.values()]
+                    # consumer_recs = [consumer_rec for consumer_rec in message_values_list]
+                    # since our poll takes  in only one message at a time so we have one consumer message at one time
+                    # to deal with - taking the value property which is a dictionary
+                    message_dict = json.loads(message_values_list[0].value)
+
+                    logger.info(f' method called to process {topic_id} with the message as {message_dict}')
+
+                    control_processing.delegator(topic_id, message=message_dict)  # as apart from 1st other are keyword args
 
                 if count_consec_empty >= consecutive_no_recs_to_signal_exit:
                     logger.info(f' The consecutive consumer polls, counted as {count_consec_empty}, '

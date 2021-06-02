@@ -27,7 +27,8 @@ def list_of_controls_per_engine():
     # more than once.
     control_list_dict = {k: control_list.count(k) for k in control_list}
     duplicate_control_list = [k for k, v in control_list_dict.items() if v > 1]
-    unique_control_list = [k for k, v in control_list_dict.items() if v == 1]
+    # unique_control_list = [k for k, v in control_list_dict.items() if v == 1] Here in all even if they have more than 1 its a unique control
+    unique_control_list = [k for k, v in control_list_dict.items()]
 
     if len(duplicate_control_list) > 0:     # Report the list of duplicate controls.
         logger.warning(f'There are some duplicate controls configured for this Engine Id {engine_id} are'
