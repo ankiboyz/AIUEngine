@@ -47,3 +47,11 @@ for the project:
     KAFKA-BROKER-URLS : This is a list of urls in case it is a Kafka Cluster, in case needed for greater redundancy.
 
 
+Mongo DB privileges needed by the Mongo Connector user:
+1. Create collection
+2. Create Indexes
+3. Ability to run aggregation pipeline on the collection
+
+Some imp notes:
+Mongo DB 4.4 onwards $merge have been provided with the ability to merge records into the
+same collection its aggregating from.
