@@ -26,8 +26,8 @@ from concurrent.futures import ThreadPoolExecutor
 #     # define a future object
 #     future = asyncio.Future()
 #
-#     consumer1 = KafkaConsumer("PAY05", bootstrap_servers=["localhost:9092"], auto_offset_reset="earliest"
-#                               , enable_auto_commit=True, group_id="PAY05")
+#     consumer1 = KafkaConsumer("REALIZER", bootstrap_servers=["localhost:9092"], auto_offset_reset="earliest"
+#                               , enable_auto_commit=True, group_id="REALIZER")
 #
 #     # wait for the completion of our coroutine that we've
 #     # turned into a future object using the ensure_future() function
@@ -58,8 +58,8 @@ from concurrent.futures import ThreadPoolExecutor
 
 
 _executor = ThreadPoolExecutor(1)
-consumer1 = KafkaConsumer("PAY05", bootstrap_servers=["localhost:9092"], auto_offset_reset="earliest"
-                              , enable_auto_commit=True, group_id="PAY05")
+consumer1 = KafkaConsumer("REALIZER", bootstrap_servers=["localhost:9092"], auto_offset_reset="earliest"
+                              , enable_auto_commit=True, group_id="REALIZER")
 
 
 def sync_blocking():
@@ -72,8 +72,8 @@ def sync_blocking():
 async def hello_world():
     # run blocking function in another thread,
     # and wait for it's result:
-    # consumer1 = KafkaConsumer("PAY05", bootstrap_servers=["localhost:9092"], auto_offset_reset="earliest"
-    #                           , enable_auto_commit=True, group_id="PAY05")
+    # consumer1 = KafkaConsumer("REALIZER", bootstrap_servers=["localhost:9092"], auto_offset_reset="earliest"
+    #                           , enable_auto_commit=True, group_id="REALIZER")
 
     r = await loop.run_in_executor(_executor, sync_blocking)
     print(r)

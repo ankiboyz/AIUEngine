@@ -95,7 +95,7 @@ def kafka_consumer_algo():
                 except Exception as error:
                     logger.error(error, exc_info=True)
 
-            # making_consumer_up('PAY05','PAY05',app)
+            # making_consumer_up('REALIZER','REALIZER',app)
             logger.info(f'List of threads for the consumers spawned is {threads_spawned_list}')
             pass
 
@@ -149,7 +149,7 @@ def making_consumer_up(topic_id, group_id, appln_cntxt):
             while True:
                 message = consumer.poll(timeout_ms=timeout_in_ms, max_records=1, update_offsets=True)
 
-                logger.info(f'Hiii this is the message from Kafka for consumer {topic_id} and this is {message} '
+                logger.info(f'Hiii this is the poll output message {message} for {topic_id}   '
                             f'from the thread {threading.current_thread().name}')
                 # Only checks for consecutive values been empty
                 if not message or len(message) == 0:
@@ -157,22 +157,35 @@ def making_consumer_up(topic_id, group_id, appln_cntxt):
 
                 else:
                     count_consec_empty = 0
-                    logger.info(f'Hiii this is the message from Kafka for consumer {topic_id} and this is {message} '
+                    logger.info(f'Hiii this is the NON-Empty message from Kafka for consumer {topic_id} : '
+                                f'message is {message} '
                                 f'from the thread {threading.current_thread().name}')
 
                     # Need to process the message here -- call a method and that method will invoke the processing of
                     # the job ID : message will only have the ID and the Control_ID : will interface with the
                     # detail table and also update status of the header table.
 
+                    # .values() method takes the values in a dict and puts them as tuples:
+                    # dict_values([[ConsumerRecord(topic='TFA02_IFA19', partition=0, offset=12, timestamp=1622633711601,
+                    #                              timestamp_type=0, key=None,
+                    #                              value=b'{"RUNID": 2222, "RISKID": "GLTTRE07", "JOBID": "1234",'
+                    #                                    b' "JOBHDRID": "0123", "CCMRISKNAME": "REALIZER",'
+                    #                                    b' "SYSTEMID": "ABC"}',
+                    #                              headers=[], checksum=None, serialized_key_size=-1,
+                    #                              serialized_value_size=117, serialized_header_size=-1)]]
+                    #             )
+
                     message_values_list = [consumer_rec_list for consumer_rec_list in message.values()]
+
+                    print(message_values_list)
                     # consumer_recs = [consumer_rec for consumer_rec in message_values_list]
                     # since our poll takes  in only one message at a time so we have one consumer message at one time
                     # to deal with - taking the value property which is a dictionary
-                    message_dict = json.loads(message_values_list[0].value)
+                    message_dict = json.loads(message_values_list[0][0].value) # see abv eg its a double list
 
                     logger.info(f' method called to process {topic_id} with the message as {message_dict}')
 
-                    control_processing.delegator(topic_id, message=message_dict)  # as apart from 1st other are keyword args
+                    control_processing.delegator(topic_id, appln_cntxt, message=message_dict)  # as apart from 1st other are keyword args
 
                 if count_consec_empty >= consecutive_no_recs_to_signal_exit:
                     logger.info(f' The consecutive consumer polls, counted as {count_consec_empty}, '

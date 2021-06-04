@@ -60,7 +60,8 @@ class Config(object):
     # For ORACLE , DEFAULT would suffice.
     # idea is to have 'DEFAULT' for all Dbs where the queries specified in list_of_sql_stmnts.py are compatible.
     DATABASE_VENDOR = 'DEFAULT'
-    SQLALCHEMY_DATABASE_URI = 'oracle://SIDDHANT:green123@192.168.2.18:2020/platform'
+    # SQLALCHEMY_DATABASE_URI = 'oracle://SIDDHANT:green123@192.168.2.18:2020/platform'
+    SQLALCHEMY_DATABASE_URI = 'oracle://EBCPDEV2:green123@192.168.2.217:2020/IRMRTA'
     SQLALCHEMY_ECHO = False
     SQLALCHEMY_TRACK_MODIFICATIONS = False  # enabled True for now
     # https://flask-sqlalchemy.palletsprojects.com/en/2.x/api/#models

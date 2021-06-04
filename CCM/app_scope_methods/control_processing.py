@@ -22,7 +22,7 @@ control_logic_dict = {'TFA02_IFA19':
                     }
 
 
-def delegator(control_id, **kwargs):
+def delegator(control_id, appln_cntxt, **kwargs):
 
     ''' This method delegates to the specific method where in the processing block for specific control will be
     executed.
@@ -34,7 +34,7 @@ def delegator(control_id, **kwargs):
 
     # Here we will get the value of the key ie the sequence of code dicts to be executed for that control.
 
-    code_units_list = control_logic_dict["control_id"]
+    code_units_list = control_logic_dict.get(control_id, list())
     if len(code_units_list) == 0:
         logger.error(f'NO code units found to be executed for the control {control_id}.. Kindly check the configuration')
 
@@ -45,7 +45,8 @@ def delegator(control_id, **kwargs):
                 imprt_module = importlib.import_module(item["path_to_module"])
                 func_to_be_called = item["method_name"]
 
-                result_frm_func_called = getattr(imprt_module, func_to_be_called)(**kwargs)
+                logger.info(f' Method {func_to_be_called} called to process the control {control_id}')
+                result_frm_func_called = getattr(imprt_module, func_to_be_called)(appln_cntxt, **kwargs)
 
             except Exception as error:
                 logger.error(f' Error encountered {error}', exc_info=True)
@@ -53,5 +54,5 @@ def delegator(control_id, **kwargs):
                 # Fail the job for the ID
                 break
 
-    return True # returns just boolean over the execution have been done irrespective of whether it was pass / fail.
+    return True     # returns just boolean over the execution have been done irrespective of whether it was pass / fail.
 

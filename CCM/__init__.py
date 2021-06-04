@@ -10,7 +10,7 @@ import CCM.logging_setup
 from werkzeug.utils import import_string
 import logging, commons.general_methods
 
-from CCM.PAY05.pay05 import pay05_bp  # imported pay05_bp Blueprint from PAY05
+from CCM.REALIZER.realizer import realizer_bp  # imported realizer_bp Blueprint from REALIZER
 
 from .models import db
 
@@ -54,7 +54,6 @@ def configure_app(application):
     db.init_app(application)
 
 
-
 app = Flask(__name__)
 
 
@@ -77,10 +76,8 @@ print(logger.parent, 'parent of CCM logger')
 logger.info("logger set :D")
 
 
-
-
 logger.info(f'CONFIGURATION:::: These are the APP Level settings: {app.config}')
 print(app.config)  # try to have this information emit out only settings which have non null values first & then d rest
 
 # Registering the views Blueprints
-app.register_blueprint(pay05_bp, url_prefix='/CCM/pay05')
+app.register_blueprint(realizer_bp, url_prefix='/CCM/realizer')

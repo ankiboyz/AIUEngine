@@ -8,7 +8,8 @@ version: 1
 
 # Disable previously configured loggers, b'coz of this value as false the loggers that are initialized before app, those are also logged
 # example the commons.general_methods, with same formatting as devised here.
-disable_existing_loggers: false
+# value as true suppresses the messages from the libraries used example Kafka etc.
+disable_existing_loggers: true
 
 # filters definition - filter can be used for filtering of log records as well enriching with additional fields
 filters:

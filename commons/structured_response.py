@@ -18,7 +18,7 @@ class StructuredResponse:
            Example of an error object as gathered as error.__dict__
            {'code': 'e3q8'
            , 'statement': 'INSERT INTO glt_ccm_xtnd_monitor_header (control_id, operation_type, parameters, start_date, end_date, duration, status, comments, created_date, updated_date) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
-           , 'params': ('PAY05', 'CCM', None, None, None, None, None, None, None, None)
+           , 'params': ('REALIZER', 'CCM', None, None, None, None, None, None, None, None)
            , 'orig': OperationalError('no such table: glt_ccm_xtnd_monitor_header')
            , 'hide_parameters': False
            , 'detail': []
