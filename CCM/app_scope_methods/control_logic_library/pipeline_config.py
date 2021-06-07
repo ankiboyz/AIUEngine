@@ -13,7 +13,7 @@ from collections import namedtuple
 # currently supported stage types as processing, decision
 
 Stage = namedtuple('Stage', ['name', 'description', 'stage_type', 'proceed_to'])
-StageProcessor = namedtuple('StageProcessor', ['module_name', 'method_name'])
+StageProcessor = namedtuple('StageProcessor', ['path_to_module', 'method_name'])
 PIPELINE = {'TFA02_IFA19':
                     [
                         {"STAGE1": Stage(name="MARK_RECS_TO_PROCESS"
@@ -21,15 +21,17 @@ PIPELINE = {'TFA02_IFA19':
                                                        " those need to be processed"
                                          , stage_type='processing'
                                          , proceed_to='STAGE2'),
-                         "STAGE_PROCESSOR": StageProcessor(module_name=''
-                                                           , method_name='')
+                         "STAGE_PROCESSOR": StageProcessor(path_to_module='CCM.app_scope_methods.control_logic_library'
+                                                                          '.control_TFA02_IFA19'
+                                                           , method_name='method_TFA02_IFA19')
                          },
                         {"STAGE2": Stage(name="PROCESS_AND_MERGE"
                                          , description="This stage processes the selected records and merges into the "
                                                        "final exception collection"
                                          , stage_type='processing'
                                          , proceed_to='STAGE3'),
-                         "STAGE_PROCESSOR": StageProcessor(module_name=''
+                         "STAGE_PROCESSOR": StageProcessor(path_to_module='CCM.app_scope_methods.control_logic_library'
+                                                                          '.control_TFA02_IFA19'
                                                            , method_name='')
                          },
                         {"STAGE3": Stage(name="MARK_PROCESSED_RECS"
@@ -37,7 +39,8 @@ PIPELINE = {'TFA02_IFA19':
                                                        "those have been processed"
                                          , stage_type='processing'
                                          , proceed_to='STAGE4'),
-                         "STAGE_PROCESSOR": StageProcessor(module_name=''
+                         "STAGE_PROCESSOR": StageProcessor(path_to_module='CCM.app_scope_methods.control_logic_library'
+                                                                          '.control_TFA02_IFA19'
                                                            , method_name='')
                          },
                         {"STAGE4": Stage(name="MARK_RECS_TO_PROCESS"
@@ -45,7 +48,8 @@ PIPELINE = {'TFA02_IFA19':
                                                        " those need to be processed"
                                          , stage_type='decision'
                                          , proceed_to={'yes': 'STAGE1', 'no': 'END'}),
-                         "STAGE_PROCESSOR": StageProcessor(module_name=''
+                         "STAGE_PROCESSOR": StageProcessor(path_to_module='CCM.app_scope_methods.control_logic_library'
+                                                                          '.control_TFA02_IFA19'
                                                            , method_name='')
                          },
                         {"END": Stage(name="END"
@@ -53,7 +57,8 @@ PIPELINE = {'TFA02_IFA19':
                                                     "leftover bookkeeping can be done in this stage. "
                                       , stage_type='processing'
                                       , proceed_to=''),
-                         "STAGE_PROCESSOR": StageProcessor(module_name=''
+                         "STAGE_PROCESSOR": StageProcessor(path_to_module='CCM.app_scope_methods.control_logic_library'
+                                                                          '.control_TFA02_IFA19'
                                                            , method_name='')
                          },
 
