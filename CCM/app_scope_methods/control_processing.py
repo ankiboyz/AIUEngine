@@ -21,7 +21,6 @@ control_logic_dict = {'TFA02_IFA19':
                       ,
                     }
 
-
 def delegator(control_id, appln_cntxt, **kwargs):
 
     ''' This method delegates to the specific method where in the processing block for specific control will be
@@ -55,4 +54,43 @@ def delegator(control_id, appln_cntxt, **kwargs):
                 break
 
     return True     # returns just boolean over the execution have been done irrespective of whether it was pass / fail.
+
+
+class Stage:
+
+    def __init__(self, name, description, stage_type):
+        self.name = name
+        self.description = description
+        self.stage_type = stage_type
+
+
+class ControlLifecycleFlowchart:
+    ''' This class will run the entire pipeline logic on its own.
+       Only thing needed is to initiate it and pass in the control parameters as dict.
+       all the parameters that are needed by the methods in the pipeline can be
+       gathered from the object level dictionary i.e. control_params_dict '''
+
+    def __init__(self, control_id, control_params_dict):
+        # to invoke the lifecycle flowchart pass in the control_id and the control_params_dict.
+        self.control_id = control_id
+        self.control_params_dict = control_params_dict
+
+        # These attributes will be set by the class methods internally looking at the config.
+        self.stage = 'initial'
+        self.pipeline = 'pipeline'  # pipeline is a simple list of the stages
+
+    def set_stage(self, stage):
+        self.stage = stage
+
+    def set_pipeline(self):
+        ''' This method should be able to set the pipeline based on the configuration '''
+
+        # self.pipeline = pipeline
+
+    def get_pipeline(self):
+        ''' Based on the control Id we should be able to get the pipeline. '''
+        pass
+
+
+
 
