@@ -24,7 +24,9 @@ models.py under CCM package, which stores all models for CCM APP.
    The file has an SQL_ID and it is appended with the DATABASE_VENDOR property which is maintained
    in the config.py. Based on the DB vendor the SQL_ID can be altered. The method general_methods.get_the_sql_str_for_db
    provides the access to the SQL string taking in the input as SQL_ID and the DATABASE_VENDOR as inputs.
-    
+8. Control Execution is fostered via an automated pipeline execution. More details over Pipeline execution in the 
+   appendix below.
+
 **Points to note**
 1. Since this app is connecting to Oracle database for maintaining some status tables,
 there is a dependency on the oracle client to be available on the OS for the specific 
@@ -55,3 +57,33 @@ Mongo DB privileges needed by the Mongo Connector user:
 Some imp notes:
 Mongo DB 4.4 onwards $merge have been provided with the ability to merge records into the
 same collection its aggregating from.
+
+Appendix A - Automated Control Execution via Configurable Pipeline
+
+1. A pipeline can be configured for a specific control_id in the pipeline_config.py file of the
+   control_logic_library package.
+2. Ideology is to mimic a flowchart in the execution.
+3. Version 1 supports the processing and decision nodes.
+4. 
+    a. Pipeline is a dictionary at highest level keyed in by the Control_ID.
+    b. The value of the above dict key is the list , that lists the stages to be
+       executed in the sequence.
+    c. Each Stage is a named tuple having some attributes for the Stage and its 
+       processor(i.e the method to be invoked). 
+    d. Stage having proceed_to as EXIT would signal the end of the pipeline. 
+    e. Stage having stage_type as 'processing' will do some processing and proceed_to will have a single value.
+    f. Stage having stage_type as 'decision' will make a decision as to move to which stage based on the logic
+       outputting boolean True/False.
+    e. Every Stage should have the STAGE_PROCESSOR key , if no method need be invoked then put in blank for method,
+       if no module need be imported then put in blank for module; if no logic need be executed in this stage,
+       then just put in blank for both module and method ; but stage should have the STAGE_PROCESSOR key.
+    f. Stage_processor has path_to_module and method_name; in case both are present , then they denote
+       the method of the mentioned module in the path_to_module to be executed. Currently, one can either have both values
+       mentioned i.e. 
+       path_to_module and method - in which case method of the specified module will be executed
+       only path_to_module - then only the module will be imported
+       only_method_name - only method will be executed
+       
+       caveat : currently the support to execute the module import and a different method both to be done is not supported.
+    
+    
