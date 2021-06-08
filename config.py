@@ -9,7 +9,7 @@ _cwd = os.path.dirname(os.path.abspath(__file__))
 """These specific configurations which need to be available even before the application context is made available.
 These are for all the APPs. NO overrides available inside each app for these settings."""
 LOG_LEVEL = 'DEBUG'   # not gets applicable as the app starts the previous loggers are disabled.
-# Below is the value of the control type for CCM that needs to be made available.
+# Below is the value of the control type for BCM that needs to be made available.
 # This section can also store some attributes which might be needed across an app, not necessarily from app_context but
 # as similar to global variables.
 OPERATION_TYPE = 'BCM'

@@ -1,14 +1,14 @@
-import CCM  # The moment CCM is imported its __init__ is called; hence the configuration settings are completed and we have app.config values
+import BCM  # The moment BCM is imported its __init__ is called; hence the configuration settings are completed and we have app.config values
 import cx_Oracle
-from CCM.app_scope_methods import controls_per_engine
+from BCM.app_scope_methods import controls_per_engine
 import logging, time, threading
-from CCM.app_scope_methods import job_handler
+from BCM.app_scope_methods import job_handler
 
 logger = logging.getLogger(__name__)
 print(logger.parent, 'parent of run logger')
 
 # cx_Oracle.init_oracle_client(lib_dir=r"C:\ORACLEINSTANTCLIENT\instantclient_19_10")
-cx_Oracle.init_oracle_client(lib_dir=CCM.app.config["ORACLE_CLIENT_PATH"])
+cx_Oracle.init_oracle_client(lib_dir=BCM.app.config["ORACLE_CLIENT_PATH"])
 
 
 def thread_function(name):
@@ -17,14 +17,14 @@ def thread_function(name):
         job_handler.list_of_jobs_to_be_handled()
         logger.debug(f' The JSM JOB_HANDLER_THREAD Main Daemon Thread loop starting')
         # print("Thread %s: starting", name)
-        time.sleep(CCM.app.config["JOB_HANDLER_THREAD_POLL_FREQUENCY"])      # make it configurable the sleep time of main daemon
+        time.sleep(BCM.app.config["JOB_HANDLER_THREAD_POLL_FREQUENCY"])      # make it configurable the sleep time of main daemon
         logger.debug(f' The JSM JOB_HANDLER_THREAD Main Daemon Thread loop finishing')
         logger.info("JOB_HANDLER_THREAD Thread %s: finishing", name)
 
 
 def create_ccm_app():
-    # CCM.app.debug = True # This is loaded from the config as DEBUG = True
-    CCM.db.create_all(app=CCM.app)   # This creates the DB
+    # BCM.app.debug = True # This is loaded from the config as DEBUG = True
+    BCM.db.create_all(app=BCM.app)   # This creates the DB
 
     # After the app been configured calling the checks for the Controls and Engine_ID association
     # maintains what all controls are to be handled by the particular application
@@ -36,7 +36,7 @@ def create_ccm_app():
     logger.info("Main : JOB_HANDLER_THREAD before running thread")
     x.start()
 
-    return CCM.app
+    return BCM.app
 
 
 if __name__ == "__main__":

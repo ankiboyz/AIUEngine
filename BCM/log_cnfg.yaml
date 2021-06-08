@@ -1,0 +1,119 @@
+# log_cnfg.yaml
+# Here, we have defined levels etc at the handler level.
+# At the logger level, we will define based on the app settings for that run, so that we can control debugging the way
+# app has been started.
+
+# Version
+version: 1
+
+# Disable previously configured loggers, b'coz of this value as false the loggers that are initialized before app, those are also logged
+# example the commons.general_methods, with same formatting as devised here.
+# value as true suppresses the messages from the libraries used example Kafka etc.
+disable_existing_loggers: true
+
+# filters definition - filter can be used for filtering of log records as well enriching with additional fields
+filters:
+  # These are callable modules, where we define class for a filter, upon execution an object for the class will be
+  # created by log manager. Format:
+  # filter_name:
+  #   ():filter class path
+  ContextualFilter:
+    (): BCM.logging_setup.ContextualFilter
+
+# formatter definition
+# For more details on format types,
+# visit - 'https://docs.python.org/3/library/logging.html#logrecord-attributes'
+# Please make note of the Passport field that we defined in the custom Filter and added as an attribute to logRecord.
+formatters:
+  # Format
+  # formatter name:
+  #   format: "defined using pre-defined variables"
+  standard:
+    format: "%(asctime)s - %(levelname)s - %(passport)s - %(module)s - %(funcName)s - %(lineno)4d - %(name)s - [%(processName)s - %(process)d] - [%(threadName)s - %(thread)d] - %(message)s - %(url)s  "
+  error:
+    format: "%(asctime)s - %(levelname)s - %(passport)s - %(module)s - %(funcName)s - %(lineno)4d - %(name)s - [%(processName)s - %(process)d] - [%(threadName)s - %(thread)d] - %(message)s - %(url)s  "
+
+# Logging Handlers
+# Console and Error Console belongs
+# For a list of pre-defined handlers, visit - 'https://docs.python.org/3/library/logging.handlers.html#module-logging.handlers'
+# Format:
+# handler_name:
+#   handler_attributes: attribute values
+# Here, filter is added to the handler and not to the logger ; which would ensure that the filter is called even if the
+# log record is being set through the propagation to the parent.
+# look for pitfall in the link: https://gist.github.com/mariocj89/73824162a3e35d50db8e758a42e39aab
+
+handlers:
+  debug_file_handler:
+    # Class Attribute - define FileHandler, StreamHandler, SocketHandler, MemoryHandler etc.
+    class: logging.handlers.RotatingFileHandler
+    # Handler Level
+    level: DEBUG
+    #formatter defined
+    formatter: standard
+    # Attaching the above created filter
+    filters: [ContextualFilter]
+    #file name
+#    filename: BCM/ccm_logs/ccm_debug_logs.log
+    filename: BCM/ccm_logs/bcm_debug_logs.log
+    #max store value 5 MB
+    maxBytes: 5242880
+    # Backup count - Rollover attribute
+    backupCount: 20
+    # Log format encoding
+    encoding: utf8
+
+  error_file_handler:
+    class: logging.handlers.RotatingFileHandler
+    level: ERROR
+    formatter: standard
+    filters: [ContextualFilter]
+#    filename: BCM/ccm_logs/ccm_error_logs.log
+    filename: BCM/ccm_logs/bcm_error_logs.log
+    maxBytes: 5242880
+    backupCount: 20
+    encoding: utf8
+
+  info_file_handler:
+    class: logging.handlers.RotatingFileHandler
+    level: INFO
+    formatter: standard
+    filters: [ContextualFilter]
+#    filename: BCM/ccm_logs/ccm_info_logs.log
+    filename: BCM/ccm_logs/bcm_info_logs.log
+    maxBytes: 5242880
+    backupCount: 20
+    encoding: utf8
+
+  console:
+    class: logging.StreamHandler
+    level: DEBUG
+    formatter: standard
+    filters: [ContextualFilter]
+    stream: ext://sys.stdout
+
+root:
+  # Logger Level - Set to NOTSET if you have child loggers with pre-defined levels;
+  # Still to be worked upon : we will have the level set up by
+  # env variables eg DEBUG as True / False as per the configurations file
+
+  # This level should also be set by whether the APP is running in DEBUG mode,
+  #  else this can be INFO or ERROR or NOTSET (but notset will emit any level message that reaches here propagating)
+  #  earlier set as level: NOTSET
+  level: DEBUG    # This also need to be set by the application level setting , same as that to the BCM logger.
+  # Attach handlers for Root Logger
+  handlers: [debug_file_handler, error_file_handler, console, info_file_handler]
+  propagate: no # the hierarchy stops here, nothing to traverse beyond it!
+
+# In case loggers for some specific modules need to be defined; those can also be defined here.
+# For every app , its parent package level can be defined here.
+loggers:
+    CCM:
+        level: DEBUG  # here , this level should be based on the level of whether app is in Debug mode! choice is between INFO/DEBUG, as we log configurations of the app at INFO level.
+        handlers: [debug_file_handler, error_file_handler, console, info_file_handler]
+        propagate: no # NO propagation beyond this, since this is the root for this app.
+#
+#    <module.x>:
+#        level: DEBUG
+#        handlers: [info_file_handler, error_file_handler, critical_file_handler, debug_file_handler, warn_file_handler]
+#        propagate: yes

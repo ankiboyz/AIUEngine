@@ -2,8 +2,8 @@
 import logging
 import datetime
 import random
-from CCM import models
-from CCM.app_scope_methods import list_of_sql_stmnts
+from BCM import models
+from BCM.app_scope_methods import list_of_sql_stmnts
 import config
 
 logger = logging.getLogger(__name__)
