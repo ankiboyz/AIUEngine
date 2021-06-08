@@ -74,6 +74,10 @@ Appendix A - Automated Control Execution via Configurable Pipeline
     e. Stage having stage_type as 'processing' will do some processing and proceed_to will have a single value.
     f. Stage having stage_type as 'decision' will make a decision as to move to which stage based on the logic
        outputting boolean True/False.
+    g. Here, decision node currently have yes_ID and no_ID based on decision method's outcome as True/False
+       Here, there would be a need for an error fork as well , in case if error happens then 
+       decision cannot only be forked for true/false. Would be needed for advance use cases.; for now false also handles error cases.
+    h. processing type of stage returns boolean op : True denotes exec happened fine, False denotes some error happened. 
     e. Every Stage should have the STAGE_PROCESSOR key , if no method need be invoked then put in blank for method,
        if no module need be imported then put in blank for module; if no logic need be executed in this stage,
        then just put in blank for both module and method ; but stage should have the STAGE_PROCESSOR key.
@@ -82,7 +86,11 @@ Appendix A - Automated Control Execution via Configurable Pipeline
        mentioned i.e. 
        path_to_module and method - in which case method of the specified module will be executed
        only path_to_module - then only the module will be imported
-       only_method_name - only method will be executed
+       only_method_name - only method will be executed. If method ONLY (i.e. NO path_to_module is present) 
+                          then lambda expressions are only currently supported , those return boolean output.
+                          Can be used in decision stages, evaluating the params in the dictionary.
+       The Stage_processor method should only return boolean (True/False) , it is the only supported output as of now.
+       
        
        caveat : currently the support to execute the module import and a different method both to be done is not supported.
     

@@ -35,6 +35,18 @@ def delegator(control_id, appln_cntxt, **kwargs):
 
     # Here we will get the value of the key ie the sequence of code dicts to be executed for that control.
 
+    # For testing purposes - START
+    # flwchart = ControlLifecycleFlowchart(control_id, appln_cntxt, {'RUN_ID': 111, 'FUNCTION_ID': "TFA02_IFA19"
+    #     , 'EXCEPTION_COLLECTION_NAME': "EXCEPTION_TFA02_IFA19"
+    #     , 'CONTROL_ID': "TFA02_IFA19"})
+
+    flwchart = ControlLifecycleFlowchart(control_id, appln_cntxt, kwargs)
+
+    flwchart.execute_pipeline()
+    # a = {'RUN_ID': 1111, 'CONTROL_ID': "TFA02_IFA19", 'EXCEPTION_COLLECTION_NAME': "EXCEPTION_TFA02_IFA19"
+    #     , 'FUNCTION_ID': "TFA02_IFA19"}
+    # For testing purposes - END
+
     code_units_list = control_logic_dict.get(control_id, list())
     if len(code_units_list) == 0:
         logger.error(f'NO code units found to be executed for the control {control_id}.. Kindly check the configuration')
@@ -74,10 +86,11 @@ class ControlLifecycleFlowchart:
         1. First, instantiate the object of the ControlLifeCycleFlowChart class,
            passing i/ps as control_id, dictionary of input parameters.
         2. Second, set the pipeline for the control ID calling in the set_pipeline method.
+           execute_pipeline method does it now.
         3. Third, call the execute_pipeline method.
         '''
 
-    def __init__(self, control_id, control_params_dict, appln):
+    def __init__(self, control_id, appln, control_params_dict):
         # to invoke the lifecycle flowchart pass in the control_id and the control_params_dict and the app (to use the
         # app context for Flask-SQLAlchemy etc.).
         self.control_id = control_id
@@ -134,14 +147,26 @@ class ControlLifecycleFlowchart:
         Also sets the flag_exit if it is the end of the pipeline or the current just executed stage
         signalled false (ie some error might have come).
         '''
-        current_stage_type = self.current_stage.stage_type
-        next_stage_id = self.current_stage.proceed_to
+        current_stage_type = self.current_stage.stage_type.strip()
+        # proceed_to can be a dict in case of decision node else it will stage ID
+        current_stage_proceed_to = self.current_stage.proceed_to
 
         # if the proceed_to is specified as EXIT or left as blank or previous stage encountered some error
         # hence o/p False.
-        # If other than decision stage invoked False
+        # If other than decision stage resulted in False (ie in the stage execution there would have been some issue)
+        if current_stage_type == 'decision':
+            # In case of a decision node value is: proceed_to={'yes_ID': 'END', 'no_ID': 'STAGE2'}
+            # There would be a need for an error placeholder in decision node as well.
+            fork_dict = {(True if k in ['yes_ID'] else False): v for k,v in current_stage_proceed_to.items()}
+            # above will yield dict : {True: 'END', False: 'STAGE2'}
+            # Now, based on output the stage need be determined:
+            next_stage_id = fork_dict[bool_op_current_executed_stage]
+        else:
+            # if not decision node
+            next_stage_id = self.current_stage.proceed_to
+
         if (next_stage_id.strip() == '') or (next_stage_id.strip() == 'EXIT') \
-                or ((current_stage_type != 'decision') and (bool_op_current_executed_stage is False)):
+                or ((current_stage_type != 'decision') and (bool_op_current_executed_stage is False)):   # current stage was not a decision node and it returned op as False
             logger.info(f' Setting the exit flag for the pipeline for {self.control_id} with input params as '
                         f'{self.control_params_dict}')
             self.flag_exit = True
@@ -163,13 +188,16 @@ class ControlLifecycleFlowchart:
 
             else:
                 # Since there should be only one matching item in the list
-                self.set_current_stage(pipeline_list_of_stages[0]["ID"], pipeline_list_of_stages[0]["STAGE"]
-                                       , pipeline_list_of_stages[0]["STAGE_PROCESSOR"])
+                self.set_current_stage(list_matching_next_stage_id[0]["ID"], list_matching_next_stage_id[0]["STAGE"]
+                                       , list_matching_next_stage_id[0]["STAGE_PROCESSOR"])
 
     def execute_current_stage_processor(self):
         ''' This will execute the logic for the current stage.
             Method also ensures the output it receives from invocation of a method is boolean.
         '''
+
+        bool_op = False
+
         current_stage_processor_path_to_module = self.current_stage_processor.path_to_module.strip()
         current_stage_processor_method_name = self.current_stage_processor.method_name.strip()
 
@@ -193,32 +221,72 @@ class ControlLifecycleFlowchart:
         continue_eval = True
 
         if continue_eval and (way_to_go == 'nothing_to_execute'):
+
+            continue_eval = False
             logger.info(f' Nothing found to execute in the Stage Processor of the stage {self.current_stage_ID} '
                         f'for the control {self.control_id} hence passing execution as TRUE')
-            continue_eval = False
             return True
 
         if continue_eval and (way_to_go == 'only_module_import'):
+
+            continue_eval = False
             try:
                 import importlib
                 imprt_module = importlib.import_module(current_stage_processor_path_to_module)
                 logger.info(f' Module {current_stage_processor_path_to_module} imported to '
                             f'process the control {self.control_id} with input params '
                             f' {self.control_params_dict} ')
-
-                continue_eval = False
+                return True
             except Exception as error:
                 logger.error(f' Error as {error} encountered for the stage {self.current_stage_ID} '
                              f' process the control {self.control_id} with input params '
                              f' {self.control_params_dict} ', exc_info=True)
 
-                continue_eval = False
                 # return the execution of this stage as False
                 return False
 
                 # record the exception in the table for this execution
 
+        if continue_eval and (way_to_go == 'only_method_execute'):
+            continue_eval = False
+
+            # Write code here to execute the method; currently only lambda functions are supported.
+            # as every stage_processor should return Boolean only.
+            # can also be used to set some value in the params_dict , but eventually return bool.
+            # examples of method only are:
+            # current_stage_processor_method_name = 'lambda: all((1,2,3))'
+            # exec('out='+current_stage_processor_method_name)
+            # out()
+            try:
+                dyn_result = None   # initialize later will be resolved to a boolean output
+                exec('out_dyn_execute=' + current_stage_processor_method_name)
+                exec('dyn_result=out_dyn_execute()')
+
+                # output to be boolean
+                # Currently the Stage_processor methods should only return Boolean
+
+                if isinstance(dyn_result, bool):
+                    return dyn_result
+                else:
+                    raise Exception(f' The method {current_stage_processor_method_name} called outputted '
+                                    f'a NON Boolean output while processing the control '
+                                    f'{self.control_id} in the stage {self.current_stage_ID} for the input params '
+                                    f'{self.control_params_dict}')
+
+            except Exception as error:
+                logger.error(f' Error as {error} encountered for the stage {self.current_stage_ID} '
+                             f' process the control {self.control_id} with input params '
+                             f' {self.control_params_dict} ', exc_info=True)
+
+                # if error-ed return the execution of this stage as False
+                return False
+
+                # record the exception in the table for this execution
+
         if continue_eval and (way_to_go == 'both_import_and_execute'):
+
+            continue_eval = False
+
             try:
                 # import module
                 import importlib
@@ -232,52 +300,27 @@ class ControlLifecycleFlowchart:
                             f'{self.control_id} in the stage {self.current_stage_ID} for the input params '
                             f'{self.control_params_dict}')
 
-                result_frm_func_called = getattr(imprt_module, current_stage_processor_method_name)(self.appln, self.control_params_dict)
-                continue_eval = False
+                result_frm_method_called = getattr(imprt_module, current_stage_processor_method_name)(self.appln, self.control_params_dict)
+
+                # Currently the Stage_processor methods should only return Boolean
+                if isinstance(result_frm_method_called, bool):
+                    return result_frm_method_called
+                else:
+                    raise Exception(f' The method {current_stage_processor_method_name} called outputted '
+                                    f'a NON Boolean output while processing the control '
+                                    f'{self.control_id} in the stage {self.current_stage_ID} for the input params '
+                                    f'{self.control_params_dict}')
 
             except Exception as error:
                 logger.error(f' Error as {error} encountered for the stage {self.current_stage_ID} '
                              f' process the control {self.control_id} with input params '
                              f' {self.control_params_dict} ', exc_info=True)
 
-                continue_eval = False
-                # return the execution of this stage as False
+                # if error-ed return the execution of this stage as False
                 return False
 
                 # record the exception in the table for this execution
-
-
-
-        else:
-            # Either 'import the module' or 'execute the method' or Both based on the configuration
-            try:
-                if len_current_stage_processor_path_to_module != 0:
-                    import importlib
-                    imprt_module = importlib.import_module(current_stage_processor_path_to_module)
-                    logger.info(f' Module {current_stage_processor_path_to_module} imported to '
-                                f'process the control {self.control_id} with input params '
-                                f' {self.control_params_dict} ')
-
-                elif len_current_stage_processor_method_name != 0:
-                    func_to_be_called = item["method_name"]
-
-                logger.info(f' Method {func_to_be_called} called to process the control {control_id}')
-                result_frm_func_called = getattr(imprt_module, func_to_be_called)(appln_cntxt, **kwargs)
-
-            except Exception as error:
-                logger.error(f' Error encountered {error}', exc_info=True)
-                # make entries into the detail table for the execution trace for that.
-                # Fail the job for the ID
-
-
-
-
-
-
-
-
-        bool_op = False
-
+        # if nothing is evaluated from any of above code units, which should not be the case, return True
         return bool_op
 
     def execute_pipeline(self):
@@ -289,32 +332,27 @@ class ControlLifecycleFlowchart:
             pipeline_list_of_stages = self.get_pipeline()
 
             # loop in till the exit is NOT flagged as True
+            logger.info(f' Pipeline execution for the control {self.control_id} with input params as '
+                        f'{self.control_params_dict} '
+                        f'started ...')
+
             while not self.flag_exit:
                 # for stage in pipeline_list_of_stages:
 
-                logger.info(f' Pipeline execution for the control {self.control_id} with input params as '
-                            f'{self.control_params_dict} '
-                            f'started ...')
-
                 # set the current stage
                 # self.set_current_stage(stage["ID"], stage["STAGE"])
+                logger.info(f' Pipeline execution for the control {self.control_id} with input params as '
+                            f'{self.control_params_dict} moved to the stage {self.current_stage_ID} '
+                           )
                 print(self.current_stage, self.current_stage_ID, self.current_stage.name)
 
                 # Do processing of the current_stage.
                 bool_op_current_stage = False
+                bool_op_current_stage = self.execute_current_stage_processor()
 
                 # Once done , go to the next stage and pass to it the status of the previous stage
                 # (i.e. the current stage that was) executed
                 self.goto_next_stage(bool_op_current_stage)
 
 
-
-# For testing purposes
-flwchart = ControlLifecycleFlowchart('TFA02_IFA19', {'RUN_ID': 111, 'FUNCTION_ID': "TFA02_IFA19"
-                                        , 'EXCEPTION_COLLECTION_NAME': "EXCEPTION_TFA02_IFA19"
-                                        , 'CONTROL_ID': "TFA02_IFA19"})
-
-flwchart.execute_pipeline()
-# a = {'RUN_ID': 1111, 'CONTROL_ID': "TFA02_IFA19", 'EXCEPTION_COLLECTION_NAME': "EXCEPTION_TFA02_IFA19"
-#     , 'FUNCTION_ID': "TFA02_IFA19"}
 

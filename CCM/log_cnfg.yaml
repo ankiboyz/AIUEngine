@@ -54,7 +54,8 @@ handlers:
     # Attaching the above created filter
     filters: [ContextualFilter]
     #file name
-    filename: CCM/ccm_logs/ccm_debug_logs.log
+#    filename: CCM/ccm_logs/ccm_debug_logs.log
+    filename: CCM/ccm_logs/bcm_debug_logs.log
     #max store value 5 MB
     maxBytes: 5242880
     # Backup count - Rollover attribute
@@ -67,7 +68,8 @@ handlers:
     level: ERROR
     formatter: standard
     filters: [ContextualFilter]
-    filename: CCM/ccm_logs/ccm_error_logs.log
+#    filename: CCM/ccm_logs/ccm_error_logs.log
+    filename: CCM/ccm_logs/bcm_error_logs.log
     maxBytes: 5242880
     backupCount: 20
     encoding: utf8
@@ -77,7 +79,8 @@ handlers:
     level: INFO
     formatter: standard
     filters: [ContextualFilter]
-    filename: CCM/ccm_logs/ccm_info_logs.log
+#    filename: CCM/ccm_logs/ccm_info_logs.log
+    filename: CCM/ccm_logs/bcm_info_logs.log
     maxBytes: 5242880
     backupCount: 20
     encoding: utf8
