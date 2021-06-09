@@ -46,7 +46,7 @@ class Config(object):
     # list of controls to be undertaken by this APP.
     # WORD OF CAUTION: Kindly ensure the list of controls entered are all Unique!
     # At every restart of the APP the list of controls is inserted into the DB for the specific EngineID
-    LIST_OF_CONTROLS = ['PAY05', 'TFA02_IFA19', 'TFA02_IFA19_SC7', 'TRE07', 'TFA02_IFA19']
+    LIST_OF_CONTROLS = ['PAY05', 'TFA02_IFA19_1', 'TFA02_IFA19_SC7', 'TRE07', 'TFA02_IFA19_1']
 
     # Out of the list of controls (as specified in LIST_OF_CONTROLS) below lists which all controls need to have
     # multiprocessing mode i.e. wherein the control processing would require CPU of engine to do some intermediary
@@ -96,13 +96,24 @@ class Config(object):
     KAFKA_BROKER_URLS = ['localhost:9092', ]
 
     # Kafka Consumer properties
-    KAFKA_CONSUMER_AUTO_OFFSET_RESET = 'earliest'   # values possible earliest or latest
+    KAFKA_CONSUMER_AUTO_OFFSET_RESET = 'latest'   # values possible earliest or latest
     KAFKA_CONSUMER_ENABLE_AUTO_COMMIT = True
     # Kafka Consumer poll timeout in Milliseconds
     KAFKA_CONSUMER_POLL_TIMEOUT_MS = 10000
     # This is the number of count if gathered by the consumer during consecutive polls as to not having any message
     # then the consumer will come down to give way to other consumers.
     KAFKA_CONSUMER_CONSECUTIVE_NO_RECS_TO_SIGNAL_EXIT = 2
+
+    # Collection Storage Engine - currently its MongoDB
+    # These IDs will be utilized in the pipelines for the execution of the individual stages.
+    # Type and Subtype to be used for further distinguishing in case more sophisticated connectivity mechanism need be
+    # devised. Please NOTE NO Whitespace in the URI!!!
+    #
+
+    MONGO_DB_CONN_URI = "mongodb://ankur:green123@192.168.2.193:27018/PHILIPS_BCM"\
+                        "?authSource=PHILIPS_BCM"\
+                        "&authMechanism=SCRAM-SHA-256&readPreference=primary"\
+                        "&appname=GLT_BCM_AIUENGINE&ssl=false"
 
 
 class ProductionConfig(Config):

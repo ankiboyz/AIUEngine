@@ -12,6 +12,7 @@ cx-oracle = "*"
 kafka-python = "*"
 pandas = "*"
 flask = "==1.1.2"
+pymongo = "*"
 
 [requires]
 python_version = "3.6"

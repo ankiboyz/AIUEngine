@@ -7,6 +7,7 @@ Objective : This module consists of methods those will be providing
 '''
 import logging
 import BCM.app_scope_methods.control_logic_library.pipeline_config as pipeline_config
+import commons.connections.mongo_db_connections as mongo_db_conn
 
 logger = logging.getLogger(__name__)
 
@@ -40,32 +41,43 @@ def delegator(control_id, appln_cntxt, **kwargs):
     #     , 'EXCEPTION_COLLECTION_NAME': "EXCEPTION_TFA02_IFA19"
     #     , 'CONTROL_ID': "TFA02_IFA19"})
 
-    flwchart = ControlLifecycleFlowchart(control_id, appln_cntxt, kwargs)
+    # Here, let's gather the mongo DB connection and pass it to the control execution flowchart.
 
-    flwchart.execute_pipeline()
+    mongo_client = mongo_db_conn.create_mongo_client(appln_cntxt.config["MONGO_DB_CONN_URI"])
+
+    # Here it means that the Mongo Client has been gathered else in case of error it would have returned False
+    if mongo_client:
+        flwchart = ControlLifecycleFlowchart(control_id, appln_cntxt, mongo_client, kwargs)
+
+        flwchart.execute_pipeline()
+    else:
+        pass
+        # We need to log the job execution and stop it from execution; signal error for the job
+
+
     # a = {'RUN_ID': 1111, 'CONTROL_ID': "TFA02_IFA19", 'EXCEPTION_COLLECTION_NAME': "EXCEPTION_TFA02_IFA19"
     #     , 'FUNCTION_ID': "TFA02_IFA19"}
     # For testing purposes - END
 
-    code_units_list = control_logic_dict.get(control_id, list())
-    if len(code_units_list) == 0:
-        logger.error(f'NO code units found to be executed for the control {control_id}.. Kindly check the configuration')
-
-    else:
-        for item in code_units_list:
-            try:
-                import importlib
-                imprt_module = importlib.import_module(item["path_to_module"])
-                func_to_be_called = item["method_name"]
-
-                logger.info(f' Method {func_to_be_called} called to process the control {control_id}')
-                result_frm_func_called = getattr(imprt_module, func_to_be_called)(appln_cntxt, **kwargs)
-
-            except Exception as error:
-                logger.error(f' Error encountered {error}', exc_info=True)
-                # make entries into the detail table for the execution trace for that.
-                # Fail the job for the ID
-                break
+    # code_units_list = control_logic_dict.get(control_id, list())
+    # if len(code_units_list) == 0:
+    #     logger.error(f'NO code units found to be executed for the control {control_id}.. Kindly check the configuration')
+    #
+    # else:
+    #     for item in code_units_list:
+    #         try:
+    #             import importlib
+    #             imprt_module = importlib.import_module(item["path_to_module"])
+    #             func_to_be_called = item["method_name"]
+    #
+    #             logger.info(f' Method {func_to_be_called} called to process the control {control_id}')
+    #             result_frm_func_called = getattr(imprt_module, func_to_be_called)(appln_cntxt, **kwargs)
+    #
+    #         except Exception as error:
+    #             logger.error(f' Error encountered {error}', exc_info=True)
+    #             # make entries into the detail table for the execution trace for that.
+    #             # Fail the job for the ID
+    #             break
 
     return True     # returns just boolean over the execution have been done irrespective of whether it was pass / fail.
 
@@ -90,12 +102,13 @@ class ControlLifecycleFlowchart:
         3. Third, call the execute_pipeline method.
         '''
 
-    def __init__(self, control_id, appln, control_params_dict):
+    def __init__(self, control_id, appln, mongo_client, control_params_dict):
         # to invoke the lifecycle flowchart pass in the control_id and the control_params_dict and the app (to use the
         # app context for Flask-SQLAlchemy etc.).
         self.control_id = control_id
         self.control_params_dict = control_params_dict
         self.appln = appln
+        self.mongo_client = mongo_client
 
         # These attributes will be set by the class methods internally looking at the config.
         # Here, just assigning some initial values
@@ -300,7 +313,9 @@ class ControlLifecycleFlowchart:
                             f'{self.control_id} in the stage {self.current_stage_ID} for the input params '
                             f'{self.control_params_dict}')
 
-                result_frm_method_called = getattr(imprt_module, current_stage_processor_method_name)(self.appln, self.control_params_dict)
+                # passed the input params as well appln, mongo_client, control_params_dict
+                result_frm_method_called = getattr(imprt_module, current_stage_processor_method_name)\
+                    (self.appln, self.mongo_client ,self.control_params_dict)
 
                 # Currently the Stage_processor methods should only return Boolean
                 if isinstance(result_frm_method_called, bool):
@@ -335,24 +350,39 @@ class ControlLifecycleFlowchart:
             logger.info(f' Pipeline execution for the control {self.control_id} with input params as '
                         f'{self.control_params_dict} '
                         f'started ...')
+            try:
+                while not self.flag_exit:
+                    # for stage in pipeline_list_of_stages:
 
-            while not self.flag_exit:
-                # for stage in pipeline_list_of_stages:
+                    # set the current stage
+                    # self.set_current_stage(stage["ID"], stage["STAGE"])
+                    logger.info(f' Pipeline execution for the control {self.control_id} with input params as '
+                                f'{self.control_params_dict} moved to the stage {self.current_stage_ID} '
+                               )
+                    print(self.current_stage, self.current_stage_ID, self.current_stage.name)
 
-                # set the current stage
-                # self.set_current_stage(stage["ID"], stage["STAGE"])
-                logger.info(f' Pipeline execution for the control {self.control_id} with input params as '
-                            f'{self.control_params_dict} moved to the stage {self.current_stage_ID} '
-                           )
-                print(self.current_stage, self.current_stage_ID, self.current_stage.name)
+                    # Do processing of the current_stage.
+                    bool_op_current_stage = False
+                    bool_op_current_stage = self.execute_current_stage_processor()
 
-                # Do processing of the current_stage.
-                bool_op_current_stage = False
-                bool_op_current_stage = self.execute_current_stage_processor()
+                    # Once done , go to the next stage and pass to it the status of the previous stage
+                    # (i.e. the current stage that was) executed
+                    self.goto_next_stage(bool_op_current_stage)
 
-                # Once done , go to the next stage and pass to it the status of the previous stage
-                # (i.e. the current stage that was) executed
-                self.goto_next_stage(bool_op_current_stage)
+            except Exception as error:
+                logger.error(f'Following error signalled while executing pipeline for the control {self.control_id} '
+                             f'with input params as '
+                             f'{self.control_params_dict} error being {error} ', exc_info=True)
 
+            finally:
+                logger.info(f'Mongo Client is closed after executing the pipeline for the control {self.control_id} '
+                            f'with input params as '
+                            f'{self.control_params_dict}')
 
+                self.mongo_client.close()
+
+    def add_to_globals_dict(self, global_to_pipeline_item):
+        # reserved for next dev cycle , here we will be able to add custom objects to the globals
+        # eg appln context, param dict and connection client.
+        pass
 

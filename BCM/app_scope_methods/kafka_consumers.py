@@ -183,7 +183,7 @@ def making_consumer_up(topic_id, group_id, appln_cntxt):
                     # to deal with - taking the value property which is a dictionary
                     message_dict = json.loads(message_values_list[0][0].value) # see abv eg its a double list
 
-                    logger.info(f' method called to process {topic_id} with the message as {message_dict}')
+                    logger.info(f' Delegator called to process {topic_id} with the message as {message_dict}')
 
                     control_processing.delegator(topic_id, appln_cntxt, message=message_dict)  # as apart from 1st other are keyword args
 

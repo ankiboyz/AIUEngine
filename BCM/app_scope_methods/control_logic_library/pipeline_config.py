@@ -18,7 +18,7 @@ from collections import namedtuple
 
 Stage = namedtuple('Stage', ['name', 'description', 'stage_type', 'proceed_to'])
 StageProcessor = namedtuple('StageProcessor', ['path_to_module', 'method_name'])
-PIPELINE = {'TFA02_IFA19':
+PIPELINE = {'TFA02_IFA19_1':
                     [
                         {"ID": "STAGE1"
                          , "STAGE": Stage(name="PREPARE_PLAYGROUND"
@@ -29,7 +29,9 @@ PIPELINE = {'TFA02_IFA19':
                                           , proceed_to='STAGE2')
                          , "STAGE_PROCESSOR": StageProcessor(path_to_module='BCM.app_scope_methods'
                                                                             '.control_logic_library.control_TFA02_IFA19'
-                                                             , method_name='method_TFA02_IFA19')
+                                                             , method_name='method_TFA02_IFA19'
+                                                             )
+                                                             # , arguments={'args': (1, 2, 3), 'kwargs': {'d': 4, }}) #currently not handling arguments reserved for next dev cycle
                          },
                         {"ID": "STAGE2"
                          , "STAGE": Stage(name="MARK_RECS_TO_PROCESS"
