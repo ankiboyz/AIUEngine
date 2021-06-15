@@ -24,7 +24,7 @@ control_logic_dict = {'TFA02_IFA19':
                     }
 
 
-def delegator(control_id, appln_cntxt, **kwargs):
+def delegator(control_id, appln_cntxt, dict_input):
 
     ''' This method delegates to the specific method where in the processing block for specific control will be
     executed.
@@ -47,7 +47,7 @@ def delegator(control_id, appln_cntxt, **kwargs):
 
     # Here it means that the Mongo Client has been gathered else in case of error it would have returned False
     if mongo_client:
-        flwchart = ControlLifecycleFlowchart(control_id, appln_cntxt, mongo_client, kwargs)
+        flwchart = ControlLifecycleFlowchart(control_id, appln_cntxt, mongo_client, dict_input)
 
         flwchart.execute_pipeline()
     else:
@@ -147,6 +147,12 @@ class ControlLifecycleFlowchart:
                                    , pipeline_list_of_stages[0]["STAGE_PROCESSOR"])
             return True
 
+    def set_control_params_dict(self):
+        ''' The Kafka Producer only sets the control_params_dict as {ID:'',CONTROL_ID: ''}
+            Setting additional keywords to the dictionary.
+        '''
+
+
     def get_pipeline(self):
         ''' Based on the control Id we should be able to get the pipeline. '''
         return self.pipeline
@@ -203,6 +209,31 @@ class ControlLifecycleFlowchart:
                 # Since there should be only one matching item in the list
                 self.set_current_stage(list_matching_next_stage_id[0]["ID"], list_matching_next_stage_id[0]["STAGE"]
                                        , list_matching_next_stage_id[0]["STAGE_PROCESSOR"])
+
+    @staticmethod
+    def format_returned_output(result_frm_method_called):
+        ''' This checks the output of the response and verifies if it is successful execution or NOT
+            The input could either be boolean or it could be dictionary as per the format below:
+            {'STATUS':, 'STATUS_COMMENTS':, 'DETAIL_SECTION':{KEY : {'value': value,'comment': comment text}}}
+        '''
+        if isinstance(result_frm_method_called, bool):
+            return_val_bool = result_frm_method_called
+            reason_text = ''
+            return_val_dict = {}    # return blank dict
+
+        elif isinstance(result_frm_method_called, dict):
+            # if the response is a dict
+            return_val_bool = True if result_frm_method_called.get('STATUS', False) == 'SUCCESS' else False
+            reason_text = 'SUCCESS' if result_frm_method_called.get('STATUS', False) == 'SUCCESS' \
+                else result_frm_method_called.get('STATUS_COMMENTS', 'FAILURE')
+            return_val_dict = result_frm_method_called
+
+        else:
+            raise Exception(f' The method called outputted '
+                            f'a NON Boolean/ non dict output while processing the control '
+                            )
+
+        return return_val_bool, reason_text, return_val_dict  # returns the tuple
 
     def execute_current_stage_processor(self):
         ''' This will execute the logic for the current stage.
@@ -277,14 +308,17 @@ class ControlLifecycleFlowchart:
 
                 # output to be boolean
                 # Currently the Stage_processor methods should only return Boolean
+                # Calling the method to decipher the returned values
+                return_val_bool, reason_text, return_val_dict = self.format_returned_output(dyn_result)
+                return return_val_bool
 
-                if isinstance(dyn_result, bool):
-                    return dyn_result
-                else:
-                    raise Exception(f' The method {current_stage_processor_method_name} called outputted '
-                                    f'a NON Boolean output while processing the control '
-                                    f'{self.control_id} in the stage {self.current_stage_ID} for the input params '
-                                    f'{self.control_params_dict}')
+                # if isinstance(dyn_result, bool):
+                #     return dyn_result
+                # else:
+                #     raise Exception(f' The method {current_stage_processor_method_name} called outputted '
+                #                     f'a NON Boolean output while processing the control '
+                #                     f'{self.control_id} in the stage {self.current_stage_ID} for the input params '
+                #                     f'{self.control_params_dict}')
 
             except Exception as error:
                 logger.error(f' Error as {error} encountered for the stage {self.current_stage_ID} '
@@ -304,6 +338,7 @@ class ControlLifecycleFlowchart:
                 # import module
                 import importlib
                 imprt_module = importlib.import_module(current_stage_processor_path_to_module)
+
                 logger.info(f' Module {current_stage_processor_path_to_module} imported to '
                             f'process the control {self.control_id} with input params '
                             f' {self.control_params_dict} ')
@@ -315,16 +350,24 @@ class ControlLifecycleFlowchart:
 
                 # passed the input params as well appln, mongo_client, control_params_dict
                 result_frm_method_called = getattr(imprt_module, current_stage_processor_method_name)\
-                    (self.appln, self.mongo_client ,self.control_params_dict)
+                    (self.appln, self.mongo_client, self.control_params_dict)
 
-                # Currently the Stage_processor methods should only return Boolean
-                if isinstance(result_frm_method_called, bool):
-                    return result_frm_method_called
-                else:
-                    raise Exception(f' The method {current_stage_processor_method_name} called outputted '
-                                    f'a NON Boolean output while processing the control '
-                                    f'{self.control_id} in the stage {self.current_stage_ID} for the input params '
-                                    f'{self.control_params_dict}')
+                # Calling the method to decipher the returned values
+                return_val_bool, reason_text, return_val_dict = self.format_returned_output(result_frm_method_called)
+                return return_val_bool
+
+                #
+                # if isinstance(result_frm_method_called, bool):
+                #     return result_frm_method_called
+                # elif isinstance(result_frm_method_called, dict):
+                #     # to code here
+                #     if result_frm_method_called.get('SUCCESS', False)
+                #     re = result_frm_method_called.get('SUCCESS', False)
+                # else:
+                #     raise Exception(f' The method {current_stage_processor_method_name} called outputted '
+                #                     f'a NON Boolean output while processing the control '
+                #                     f'{self.control_id} in the stage {self.current_stage_ID} for the input params '
+                #                     f'{self.control_params_dict}')
 
             except Exception as error:
                 logger.error(f' Error as {error} encountered for the stage {self.current_stage_ID} '
@@ -384,5 +427,7 @@ class ControlLifecycleFlowchart:
     def add_to_globals_dict(self, global_to_pipeline_item):
         # reserved for next dev cycle , here we will be able to add custom objects to the globals
         # eg appln context, param dict and connection client.
+        # Here methods will be execute and output of those methods will be added to the Globals dictionary available to
+        # all the stages of the pipeline.
         pass
 

@@ -181,11 +181,15 @@ def making_consumer_up(topic_id, group_id, appln_cntxt):
                     # consumer_recs = [consumer_rec for consumer_rec in message_values_list]
                     # since our poll takes  in only one message at a time so we have one consumer message at one time
                     # to deal with - taking the value property which is a dictionary
+                    # message obtained is {'message': {'ID': 30, 'CONTROL_ID': 'TFA02_IFA19_1'}}
                     message_dict = json.loads(message_values_list[0][0].value) # see abv eg its a double list
+                    logger.debug(f'The NON-Empty message after unwrapping out of gathered by Consumer is {message_dict}')
+
+                    # body_dict = message_dict['message']     # passing on the inner dict of the message only
 
                     logger.info(f' Delegator called to process {topic_id} with the message as {message_dict}')
 
-                    control_processing.delegator(topic_id, appln_cntxt, message=message_dict)  # as apart from 1st other are keyword args
+                    control_processing.delegator(topic_id, appln_cntxt, dict_input=message_dict)  # as apart from 1st other are keyword args
 
                 if count_consec_empty >= consecutive_no_recs_to_signal_exit:
                     logger.info(f' The consecutive consumer polls, counted as {count_consec_empty}, '

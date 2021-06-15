@@ -77,7 +77,8 @@ Appendix A - Automated Control Execution via Configurable Pipeline
     g. Here, decision node currently have yes_ID and no_ID based on decision method's outcome as True/False
        Here, there would be a need for an error fork as well , in case if error happens then 
        decision cannot only be forked for true/false. Would be needed for advance use cases.; for now false also handles error cases.
-    h. processing type of stage returns boolean op : True denotes exec happened fine, False denotes some error happened. 
+    h. processing type of stage returns boolean op : True denotes exec happened fine, False denotes some error happened.
+       the stage processor methods can return the boolean o/p or a response dictinary of a specific structure.
     e. Every Stage should have the STAGE_PROCESSOR key , if no method need be invoked then put in blank for method,
        if no module need be imported then put in blank for module; if no logic need be executed in this stage,
        then just put in blank for both module and method ; but stage should have the STAGE_PROCESSOR key.
@@ -95,3 +96,7 @@ Appendix A - Automated Control Execution via Configurable Pipeline
        caveat : currently the support to execute the module import and a different method both to be done is not supported.
     
     
+    Following changes are envisioned in the future release:
+        1. Mongo DB name , connector ID to be a part of the parameters in the pipeline.
+        2. There can be pipeline globals and overrides in each of the stages.
+        3. For multi thread and multi proc , components like fork-safe and thread-safe would be configurable; example MongoClient.

@@ -71,3 +71,19 @@ class StructuredResponse:
         return success_dict
 
 
+class StageOutputResponseDict:
+    ''' Method to formulate the stage output response to the outer pipeline '''
+
+    def __init__(self):
+       self.method_op_dict = {'STATUS': '', 'STATUS_COMMENTS': '', 'DETAIL_SECTION': {}}
+
+    def add_to_detail_section_dict(self, keyname, value, comment):
+        ''' Method to add to the detail section of the response to be passed from the stage to the pipeline'''
+        self.method_op_dict['DETAIL_SECTION'][keyname] = {'value':value, 'comment': comment}
+
+    def add_to_status(self,status):
+        ''' set to SUCCESS if 1 is passed else Failure for all other values'''
+        self.method_op_dict['STATUS'] = 'SUCCESS' if status == 1 else 'FAILURE'
+
+    def add_to_status_comments(self, status_comments):
+        self.method_op_dict['STATUS_COMMENTS'] = status_comments

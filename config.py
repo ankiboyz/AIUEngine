@@ -105,10 +105,13 @@ class Config(object):
     KAFKA_CONSUMER_CONSECUTIVE_NO_RECS_TO_SIGNAL_EXIT = 2
 
     # Collection Storage Engine - currently its MongoDB
-    # These IDs will be utilized in the pipelines for the execution of the individual stages.
+
+    # Future(NotInCurrentRelease) These IDs will be utilized in the pipelines for the execution of the individual stages.
     # Type and Subtype to be used for further distinguishing in case more sophisticated connectivity mechanism need be
-    # devised. Please NOTE NO Whitespace in the URI!!!
-    #
+    # devised. Later releases Mongo DB name also to be made part of the pipeline.
+    # For Current Release , below:
+    # Please NOTE NO Whitespace in the URI!!!
+    # Please mention the database in the URI itself , code will be connecting to this DB.
 
     MONGO_DB_CONN_URI = "mongodb://ankur:green123@192.168.2.193:27018/PHILIPS_BCM"\
                         "?authSource=PHILIPS_BCM"\
