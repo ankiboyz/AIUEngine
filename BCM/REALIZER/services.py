@@ -74,7 +74,8 @@ class CCMHeader:
             logger.error(error, exc_info=True)
             # print('error', error)
             db.session.rollback()
-            db.session.close()  # under observation in order to minimize sessions remained open
+            db.session.close()  # under observation in order to minimize sessions remained open,
+                                # session close returns the connection to the pool, for transactions within a connection with db.session.begin
 
             # Converting into standard ERROR response
             std_err_resp_dict = structured_response.StructuredResponse(error, 'SQLAlchemyException')\

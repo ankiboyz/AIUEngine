@@ -8,7 +8,14 @@ logger = logging.getLogger(__name__)
 print(logger.parent, 'parent of run logger')
 
 # cx_Oracle.init_oracle_client(lib_dir=r"C:\ORACLEINSTANTCLIENT\instantclient_19_10")
-cx_Oracle.init_oracle_client(lib_dir=BCM.app.config["ORACLE_CLIENT_PATH"])
+# Commenting from here as it was giving the library already initialized error as shown below and moving it in
+# the if __main__ block; so that import of this run wont be called again.
+# Traceback (most recent call last):
+#   File "C:/Users/ASaxena/PycharmProjects/AIUEngine/run.py", line 50, in <module>
+#     cx_Oracle.init_oracle_client(lib_dir=BCM.app.config["ORACLE_CLIENT_PATH"])
+# cx_Oracle.ProgrammingError: Oracle Client library has already been initialized
+
+# cx_Oracle.init_oracle_client(lib_dir=BCM.app.config["ORACLE_CLIENT_PATH"])
 
 
 def thread_function(name):
@@ -36,7 +43,7 @@ def create_ccm_app():
     logger.info("Main : JOB_HANDLER_THREAD before running thread")
     x.start()
 
-    return BCM.app
+    return BCM.app, BCM.db  # here it returns the initialized db as well.
 
 
 if __name__ == "__main__":
@@ -44,8 +51,13 @@ if __name__ == "__main__":
     # app.debug = True
     # db.create_all(app=app)
     # app.run()
-    appln = create_ccm_app()
+
+    # initializing the cx_Oracle client to connect to the Oracle database.
+    cx_Oracle.init_oracle_client(lib_dir=BCM.app.config["ORACLE_CLIENT_PATH"])
+
+    appln, db = create_ccm_app()    # as it returns the tuple of application and db
     try:
         appln.run()
     finally:
-        print("Finally block in the application stop ")
+        logger.info("Finally block in the application stop ")
+        print("Finally block in the application stop ")  # in case logger is not initialized when the application stops

@@ -8,6 +8,7 @@ Objective : This module consists of methods those will be providing
 import logging
 import BCM.app_scope_methods.control_logic_library.pipeline_config as pipeline_config
 import commons.connections.mongo_db_connections as mongo_db_conn
+import run    # this was causing issue as run was getting re-executed and the oracle client library was getting re-initialized.
 
 logger = logging.getLogger(__name__)
 
@@ -24,7 +25,7 @@ control_logic_dict = {'TFA02_IFA19':
                     }
 
 
-def delegator(control_id, appln_cntxt, dict_input):
+def delegator(control_id, dict_input):
 
     ''' This method delegates to the specific method where in the processing block for specific control will be
     executed.
@@ -41,13 +42,21 @@ def delegator(control_id, appln_cntxt, dict_input):
     #     , 'EXCEPTION_COLLECTION_NAME': "EXCEPTION_TFA02_IFA19"
     #     , 'CONTROL_ID': "TFA02_IFA19"})
 
-    # Here, let's gather the mongo DB connection and pass it to the control execution flowchart.
+    # Here , we will call the method to create an app object and also the db.
+    # a tuple is returned by it - application and also initialized db without any connection yet been created.
 
-    mongo_client = mongo_db_conn.create_mongo_client(appln_cntxt.config["MONGO_DB_CONN_URI"])
+    # so now this happens independently, not passed by the parent thread.
+    # Hence we can now make use of it in forking as well as threading.
+
+    application, database = run.create_ccm_app()
+
+    # Here, let's gather the mongo DB connection and pass it to the control execution flowchart.
+    mongo_client = mongo_db_conn.create_mongo_client(application.config["MONGO_DB_CONN_URI"])
 
     # Here it means that the Mongo Client has been gathered else in case of error it would have returned False
     if mongo_client:
-        flwchart = ControlLifecycleFlowchart(control_id, appln_cntxt, mongo_client, dict_input)
+        flwchart = ControlLifecycleFlowchart(control_id, application, database, mongo_client, dict_input)
+
 
         flwchart.execute_pipeline()
     else:
@@ -102,13 +111,17 @@ class ControlLifecycleFlowchart:
         3. Third, call the execute_pipeline method.
         '''
 
-    def __init__(self, control_id, appln, mongo_client, control_params_dict):
+    def __init__(self, control_id, appln, database, mongo_client, control_params_dict):
         # to invoke the lifecycle flowchart pass in the control_id and the control_params_dict and the app (to use the
         # app context for Flask-SQLAlchemy etc.).
         self.control_id = control_id
         self.control_params_dict = control_params_dict
         self.appln = appln
         self.mongo_client = mongo_client
+        self.db = database
+        # initialize it with None , pls do not chane this val , its used later in closing procedures.
+        # will be set later upon by the specific method
+        self.db_session = None
 
         # These attributes will be set by the class methods internally looking at the config.
         # Here, just assigning some initial values
@@ -147,11 +160,83 @@ class ControlLifecycleFlowchart:
                                    , pipeline_list_of_stages[0]["STAGE_PROCESSOR"])
             return True
 
+    def pipeline_initialization_procedures(self):
+        ''' This method will set up the initialization procedures for the pipeline.
+        Eg: Setting the DB session.
+            Setting up the control params dict i.e input to the methods of the pipeline.
+            Setting up the pipeline.
+
+        Returns boolean output to signal whether the initialization procedures have been accomplished successfully.
+        '''
+        bool_op = False
+
+        try:
+            bool_resp = self.set_pipeline() # method returns a boolean response
+            # This needs to be done before to get the db connection for the control_params_dict to get the data.
+            self.set_db_session()
+            self.set_control_params_dict()
+
+            # it has reached here so no exceptions encountered in set_db_session and set_control_params_dict().
+            # also consider the bool_resp from set_pipeline method.
+            if bool_resp:
+                bool_op = True
+
+        except Exception as error:
+            logger.error(f' Error {error} encountered while initializing pipeline for {self.control_id} '
+                         f'with input params as '
+                         f'{self.control_params_dict}', exc_info=True)
+
+            self.signal_exit()
+            bool_op = False
+
+        return bool_op
+
     def set_control_params_dict(self):
         ''' The Kafka Producer only sets the control_params_dict as {ID:'',CONTROL_ID: ''}
             Setting additional keywords to the dictionary.
         '''
 
+        # The first place we are looking for the additional parameters are the Request args those are stored in the
+        # DB table. Once we get the DB session i.e we get the values from the PARAMETERS tab
+        pass
+
+    def signal_exit(self, bool_val):
+        if bool_val:
+            self.flag_exit = True
+            logger.info(f' Setting the exit flag for the pipeline for {self.control_id} with input params as '
+                        f'{self.control_params_dict}')
+        else:
+            self.flag_exit = False
+
+    def do_closing_procedures(self):
+        self.mongo_client.close()   # Close the client
+        logger.info(f' Mongo Client is closed after executing the pipeline for the control {self.control_id} '
+                    f' with input params as '
+                    f'{self.control_params_dict}')
+        # releases the proxy (Connection obj) of the actual connection (via DBAPI) to the pool
+        # - then it can be handled by garbage collection
+        # Here we need to make a check if there has been an error in getting session itself then ignore this step as
+        # its a close call on NOne - with which it was initialized earlier.
+        if self.db_session is not None:
+            self.db_session.close()
+
+    def set_db_session(self):
+        ''' This method will set the db session for the pipeline.
+        Currently, the idea is to set the db session for a pipeline and let the entire pipeline use that session.
+        Once done the end of the pipeline stage will close the session - in order to free up the resources.
+        '''
+        try:
+            with self.appln.app_context():
+                self.db_session = self.db.session()
+
+        except Exception as error:
+            logger.error(f' Error in getting the Database session in the pipeline for control {self.control_id} '
+                         f' with the input parameters as {self.control_params_dict} , error being '
+                         f'{error} ', exc_info=True)
+            self.signal_exit(True)  # signal the exit
+
+        # finally:                          # this is handled in the execute pipeline finally the closing procedures.
+        #     self.do_closing_procedures()
 
     def get_pipeline(self):
         ''' Based on the control Id we should be able to get the pipeline. '''
@@ -186,9 +271,10 @@ class ControlLifecycleFlowchart:
 
         if (next_stage_id.strip() == '') or (next_stage_id.strip() == 'EXIT') \
                 or ((current_stage_type != 'decision') and (bool_op_current_executed_stage is False)):   # current stage was not a decision node and it returned op as False
-            logger.info(f' Setting the exit flag for the pipeline for {self.control_id} with input params as '
-                        f'{self.control_params_dict}')
-            self.flag_exit = True
+            self.signal_exit(True)
+            # logger.info(f' Setting the exit flag for the pipeline for {self.control_id} with input params as '
+            #             f'{self.control_params_dict}')
+            # self.flag_exit = True
 
         else:
             pipeline_list_of_stages = self.get_pipeline()
@@ -203,7 +289,9 @@ class ControlLifecycleFlowchart:
                              f'as {self.control_params_dict}')
 
                 # exit the pipeline
-                self.flag_exit = True
+                self.signal_exit(True)
+
+                # self.flag_exit = True
 
             else:
                 # Since there should be only one matching item in the list
@@ -350,7 +438,7 @@ class ControlLifecycleFlowchart:
 
                 # passed the input params as well appln, mongo_client, control_params_dict
                 result_frm_method_called = getattr(imprt_module, current_stage_processor_method_name)\
-                    (self.appln, self.mongo_client, self.control_params_dict)
+                    (self.appln, self.db_session, self.mongo_client, self.control_params_dict)
 
                 # Calling the method to decipher the returned values
                 return_val_bool, reason_text, return_val_dict = self.format_returned_output(result_frm_method_called)
@@ -385,7 +473,8 @@ class ControlLifecycleFlowchart:
         ''' This method once called will execute the entire pipeline. '''
 
         # set_pipeline sets up the pipeline as well as the initial stage.
-        if self.set_pipeline():
+        # if self.set_pipeline():
+        if self.pipeline_initialization_procedures():
 
             pipeline_list_of_stages = self.get_pipeline()
 
@@ -418,11 +507,12 @@ class ControlLifecycleFlowchart:
                              f'{self.control_params_dict} error being {error} ', exc_info=True)
 
             finally:
-                logger.info(f'Mongo Client is closed after executing the pipeline for the control {self.control_id} '
-                            f'with input params as '
+                self.do_closing_procedures()
+                logger.info(f' Closing procedures called - '
+                            f' for the control {self.control_id} '
+                            f' with input params as '
                             f'{self.control_params_dict}')
 
-                self.mongo_client.close()
 
     def add_to_globals_dict(self, global_to_pipeline_item):
         # reserved for next dev cycle , here we will be able to add custom objects to the globals

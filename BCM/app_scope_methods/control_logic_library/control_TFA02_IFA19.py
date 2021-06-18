@@ -10,7 +10,7 @@ import commons.structured_response as structured_response
 logger = logging.getLogger(__name__)
 
 
-def method_tfa02_ifa19_1(appln_cntxt, mongo_client, control_params_dict):
+def method_tfa02_ifa19_1(appln_cntxt, db_session, mongo_client, control_params_dict):
     passed_dict = control_params_dict
     ''' Accepts the keyword arguments'''
     logger.info(f' Executing the control library with args {passed_dict} ')

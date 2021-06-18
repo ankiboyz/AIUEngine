@@ -16,7 +16,12 @@ import config
 # import asyncio
 from BCM.app_scope_methods import control_processing
 
+# Here we get both the app and a db that has been initialized with app (i.e db.init method has been called onto it).
+# And on these we can execute the DB transactions .. and db.session from flask-sqlachemy seems to
+# return the same SqlAlchemy Session object that can be workd upon.
 from BCM import models, app
+
+from flask import current_app
 
 logger = logging.getLogger(__name__)
 db = models.db
@@ -25,7 +30,11 @@ db = models.db
 def kafka_consumer_algo():
     ''' This algo will uncover the number of consumers need to be spawned '''
 
-    with app.app_context():
+    with app.app_context():     # within app.app_context block current_app is available.
+
+        # Testing for current_app availability within app.app_context
+        # print('the current app config values are ', current_app.config)
+
         # cntrl_monitor_hdr = models.CCMMonitorHDR()
         # query = cntrl_monitor_hdr.query.filter_by(status=models.StatusEnum.SUBMITTED).all()
         # logger.debug(f'There are these many jobs to be handled {len(query)}')
@@ -189,7 +198,7 @@ def making_consumer_up(topic_id, group_id, appln_cntxt):
 
                     logger.info(f' Delegator called to process {topic_id} with the message as {message_dict}')
 
-                    control_processing.delegator(topic_id, appln_cntxt, dict_input=message_dict)  # as apart from 1st other are keyword args
+                    control_processing.delegator(topic_id, dict_input=message_dict)  # as apart from 1st other are keyword args
 
                 if count_consec_empty >= consecutive_no_recs_to_signal_exit:
                     logger.info(f' The consecutive consumer polls, counted as {count_consec_empty}, '
