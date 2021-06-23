@@ -18,7 +18,7 @@ def list_of_jobs_to_be_handled():
     ''' This will provide the list of jobs to be handled '''
 
     with app.app_context():
-        cntrl_monitor_hdr = models.CCMMonitorHDR()
+        cntrl_monitor_hdr = models.BCMMonitorHDR()
         query = cntrl_monitor_hdr.query.filter_by(status=models.StatusEnum.SUBMITTED).all()
         logger.debug(f'There are these many jobs to be handled {len(query)}')
 

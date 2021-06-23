@@ -52,7 +52,7 @@ class CCMHeader:
         # at the method creation time) should not come here.
 
         # here all the input values those have will be taken in , key denotes name of the table column
-        ccmhdr = models.CCMMonitorHDR(**kwargs)
+        ccmhdr = models.BCMMonitorHDR(**kwargs)
         ccmhdr.created_date = datetime.now()
         ccmhdr.updated_date = datetime.now()
 

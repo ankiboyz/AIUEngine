@@ -6,7 +6,7 @@ For example, if you want to find the application logic about REALIZER control,
   it is BCM/__init__.py )."""
 import config
 from flask import Blueprint, request, jsonify
-from BCM.models import CCMMonitorHDR, CCMonitorDTL, StatusEnum
+from BCM.models import BCMMonitorHDR, BCMMonitorDTL, StatusEnum
 import logging
 import json
 from BCM.REALIZER import services
@@ -21,7 +21,7 @@ realizer_bp = Blueprint('realizer_bp', __name__,
 
 @realizer_bp.route('/')
 def list_jobs():
-    pay05_executions = CCMMonitorHDR.query.all()
+    pay05_executions = BCMMonitorHDR.query.all()
     print(logger.parent, 'parent of logger of pay03 module')  # Here,the parent was coming as BCM.(chief of this APP)
     logger.info("I am in REALIZER with args as {0}".format(request.args))
     # logging.debug("I am in PA03 with args as {}", request.args)

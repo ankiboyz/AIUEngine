@@ -39,7 +39,7 @@ def sequences_provider(ip_tablename, ip_columnname, ip_batchsize):
     logger.info(f'The input parameters for this method are ip_tablename = {ip_tablename}'
                 f', ip_columnname = {ip_columnname} and ip_batchsize = {ip_batchsize}')
 
-    current_sequence_query = models.CCMSequences.query.filter_by(table_name=ip_tablename, column_name=ip_columnname)
+    current_sequence_query = models.BCMSequences.query.filter_by(table_name=ip_tablename, column_name=ip_columnname)
     # results_all = current_sequence_query.all()
     results_first = current_sequence_query.first()
 
@@ -47,7 +47,7 @@ def sequences_provider(ip_tablename, ip_columnname, ip_batchsize):
     print(type(results_first), results_first)
 
     if results_first is None:
-        ccm_sequences_obj = models.CCMSequences(table_name=ip_tablename, column_name=ip_columnname, sequences=0)
+        ccm_sequences_obj = models.BCMSequences(table_name=ip_tablename, column_name=ip_columnname, sequences=0)
         db.session.add(ccm_sequences_obj)   # insert happens here
         db.session.commit()
         current_sequence_value = 0

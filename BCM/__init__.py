@@ -14,6 +14,9 @@ from BCM.REALIZER.realizer import realizer_bp  # imported realizer_bp Blueprint 
 
 from .models import db
 
+# logger = logging.getLogger(__name__)
+# print(logger.parent, 'parent of BCM logger')
+# logger.info("logger set :D")
 
 def configure_app(application):
     """ This method provides the configuration to the application - default < Override < env variables settings """
@@ -37,7 +40,9 @@ def configure_app(application):
     config_override_file_path = os.path.join(pwd, 'config_overrides.py')
 
     if os.path.exists(config_override_file_path):
+
         pwd_relative = os.path.relpath(pwd, start=os.curdir)
+        print(f'For Configuration overrides, Relative path gathered is {pwd_relative}')
         application.config.from_object(pwd_relative + '.' + 'config_overrides')
 
     """ This override is provided from the environment variable APP_CONFIG.

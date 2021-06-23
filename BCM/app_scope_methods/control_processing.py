@@ -5,10 +5,11 @@ Author: Ankur Saxena
 Objective : This module consists of methods those will be providing
             the processing logic needed to be worked out on the specific controls.
 '''
-import logging
+import logging, json
 import BCM.app_scope_methods.control_logic_library.pipeline_config as pipeline_config
 import commons.connections.mongo_db_connections as mongo_db_conn
 import run    # this was causing issue as run was getting re-executed and the oracle client library was getting re-initialized.
+import BCM.models as models
 
 logger = logging.getLogger(__name__)
 
@@ -56,8 +57,6 @@ def delegator(control_id, dict_input):
     # Here it means that the Mongo Client has been gathered else in case of error it would have returned False
     if mongo_client:
         flwchart = ControlLifecycleFlowchart(control_id, application, database, mongo_client, dict_input)
-
-
         flwchart.execute_pipeline()
     else:
         pass
@@ -132,7 +131,8 @@ class ControlLifecycleFlowchart:
                                                    , proceed_to='')
         self.current_stage_processor = pipeline_config.StageProcessor(path_to_module='', method_name='')
         self.pipeline = []  # pipeline is a simple list of the stages
-        self.flag_exit = False  # flag to exit
+        self.flag_exit = False      # flag to exit
+        self.flag_error = False     # flag to denote some error happened and hence needed to fail the job
 
     def set_current_stage(self, stage_id, stage, stage_processor):
         self.current_stage_ID = stage_id
@@ -186,7 +186,8 @@ class ControlLifecycleFlowchart:
                          f'with input params as '
                          f'{self.control_params_dict}', exc_info=True)
 
-            self.signal_exit()
+            self.signal_error(True)
+            self.signal_exit(True)
             bool_op = False
 
         return bool_op
@@ -198,15 +199,52 @@ class ControlLifecycleFlowchart:
 
         # The first place we are looking for the additional parameters are the Request args those are stored in the
         # DB table. Once we get the DB session i.e we get the values from the PARAMETERS tab
-        pass
+        try:
+            # with self.db_session.begin(): # it seems that DB_Session need not be passed since models creates a db in the begining
+            op_row = models.select_from_CCMMonitorHDR(self.control_params_dict['ID'], self.appln)
+
+            # Since it is supposed to return  only one row ; list of result will have only one row.
+            # ths string returned is converted to a json and hence wud come out as a dict
+            # "{\"RUN_ID\": \"1b90f9d5-094d-4816-a8a8-8ddf04247486-1622726323002\",
+            # \"CONTROL_ID\":\"TFA02_IFA19_1\",
+            # \"EXCEPTION_COLLECTION_NAME\": \"EXCEPTION_TFA02_IFA19_1\",
+            # \"FUNCTION_ID\": \"TFA02_COPY\"}"
+
+            list_of_params_dict = json.loads(op_row[0].parameters)
+
+            logger.debug(f'list_of_params_dict modified, {type(list_of_params_dict)}, {list_of_params_dict}')
+
+            # Here, we will merge the 2 dicts in place, 2nd argument will override the first one
+            self.control_params_dict = {**self.control_params_dict, **list_of_params_dict}
+
+            logger.debug(f' The modified parameters dictionary is as {self.control_params_dict}')
+
+        except Exception as error:
+            # First log error and then signal exit.
+            logger.error(f' Error encountered while setting the control_params_dict for {self.control_id} '
+                         f' with input params as '
+                         f' {self.control_params_dict}, error being {error}', exc_info=True
+                         )
+            self.signal_error(True)
+            self.signal_exit(True)
 
     def signal_exit(self, bool_val):
+        ''' True to Exit; False to not Exit '''
         if bool_val:
             self.flag_exit = True
             logger.info(f' Setting the exit flag for the pipeline for {self.control_id} with input params as '
                         f'{self.control_params_dict}')
         else:
             self.flag_exit = False
+
+    def signal_error(self, bool_val):
+        ''' True to flag error encountered; False to reset the flag to False '''
+        if bool_val:
+            self.flag_error = True
+            logger.info(f' Setting the Error flag for the pipeline for {self.control_id} with input params as '
+                        f'{self.control_params_dict}')
+        else:
+            self.flag_error = False
 
     def do_closing_procedures(self):
         self.mongo_client.close()   # Close the client
@@ -219,6 +257,9 @@ class ControlLifecycleFlowchart:
         # its a close call on NOne - with which it was initialized earlier.
         if self.db_session is not None:
             self.db_session.close()
+            logger.info(f' DB Session is closed after executing the pipeline for the control {self.control_id} '
+                        f' with input params as '
+                        f'{self.control_params_dict}')
 
     def set_db_session(self):
         ''' This method will set the db session for the pipeline.
@@ -233,6 +274,7 @@ class ControlLifecycleFlowchart:
             logger.error(f' Error in getting the Database session in the pipeline for control {self.control_id} '
                          f' with the input parameters as {self.control_params_dict} , error being '
                          f'{error} ', exc_info=True)
+            self.signal_error(True)     # an error been encountered
             self.signal_exit(True)  # signal the exit
 
         # finally:                          # this is handled in the execute pipeline finally the closing procedures.
@@ -269,14 +311,21 @@ class ControlLifecycleFlowchart:
             # if not decision node
             next_stage_id = self.current_stage.proceed_to
 
-        if (next_stage_id.strip() == '') or (next_stage_id.strip() == 'EXIT') \
-                or ((current_stage_type != 'decision') and (bool_op_current_executed_stage is False)):   # current stage was not a decision node and it returned op as False
+        if (next_stage_id.strip() == '') or (next_stage_id.strip() == 'EXIT'):
+            # Graceful Exit , completed all the tasks.
             self.signal_exit(True)
             # logger.info(f' Setting the exit flag for the pipeline for {self.control_id} with input params as '
             #             f'{self.control_params_dict}')
             # self.flag_exit = True
 
+        elif (current_stage_type != 'decision') and (bool_op_current_executed_stage is False):
+            # current stage was not a decision node and it returned op as False
+            # Here, we have to signal Error as well along with , Exit. Exit as a result of Error.
+            self.signal_error(True)
+            self.signal_exit(True)
+
         else:
+
             pipeline_list_of_stages = self.get_pipeline()
             list_matching_next_stage_id = [item_dict for item_dict in pipeline_list_of_stages
                                            if item_dict["ID"] == next_stage_id]
@@ -289,6 +338,7 @@ class ControlLifecycleFlowchart:
                              f'as {self.control_params_dict}')
 
                 # exit the pipeline
+                self.signal_error(True)
                 self.signal_exit(True)
 
                 # self.flag_exit = True
@@ -298,8 +348,8 @@ class ControlLifecycleFlowchart:
                 self.set_current_stage(list_matching_next_stage_id[0]["ID"], list_matching_next_stage_id[0]["STAGE"]
                                        , list_matching_next_stage_id[0]["STAGE_PROCESSOR"])
 
-    @staticmethod
-    def format_returned_output(result_frm_method_called):
+    # @staticmethod
+    def format_returned_output(self, result_frm_method_called):
         ''' This checks the output of the response and verifies if it is successful execution or NOT
             The input could either be boolean or it could be dictionary as per the format below:
             {'STATUS':, 'STATUS_COMMENTS':, 'DETAIL_SECTION':{KEY : {'value': value,'comment': comment text}}}
@@ -312,16 +362,28 @@ class ControlLifecycleFlowchart:
         elif isinstance(result_frm_method_called, dict):
             # if the response is a dict
             return_val_bool = True if result_frm_method_called.get('STATUS', False) == 'SUCCESS' else False
-            reason_text = 'SUCCESS' if result_frm_method_called.get('STATUS', False) == 'SUCCESS' \
-                else result_frm_method_called.get('STATUS_COMMENTS', 'FAILURE')
+
+            # This is to accommodate the case when decision node runs into error, so only True / False is nt sufficient.
+            is_error_encountered = True if result_frm_method_called.get('STATUS', False) == 'ERROR' else False
+            if is_error_encountered:
+                self.signal_error(True)
+
+            # Boolean and String comparison does not throw an error.
+            reason_text = 'SUCCESS' if result_frm_method_called.get('STATUS', False) == 'SUCCESS' else \
+                result_frm_method_called.get('STATUS_COMMENTS', 'FAILURE')
+
+            # copies the entire dictionary painstakingly created by the internal methods.
             return_val_dict = result_frm_method_called
 
         else:
+            self.signal_error(True)
             raise Exception(f' The method called outputted '
                             f'a NON Boolean/ non dict output while processing the control '
-                            )
-
-        return return_val_bool, reason_text, return_val_dict  # returns the tuple
+                            f'in the pipeline for control {self.control_id} with the input params '
+                            f'as {self.control_params_dict}')
+        # returns the tuple (True, SUCCESS,
+        # {'STATUS':, 'STATUS_COMMENTS':, 'DETAIL_SECTION':{KEY : {'value': value,'comment': comment text}}})
+        return return_val_bool, reason_text, return_val_dict
 
     def execute_current_stage_processor(self):
         ''' This will execute the logic for the current stage.
@@ -461,8 +523,9 @@ class ControlLifecycleFlowchart:
                 logger.error(f' Error as {error} encountered for the stage {self.current_stage_ID} '
                              f' process the control {self.control_id} with input params '
                              f' {self.control_params_dict} ', exc_info=True)
-
+                self.signal_error(True)
                 # if error-ed return the execution of this stage as False
+
                 return False
 
                 # record the exception in the table for this execution
@@ -502,17 +565,25 @@ class ControlLifecycleFlowchart:
                     self.goto_next_stage(bool_op_current_stage)
 
             except Exception as error:
+                self.signal_error(True)
                 logger.error(f'Following error signalled while executing pipeline for the control {self.control_id} '
                              f'with input params as '
                              f'{self.control_params_dict} error being {error} ', exc_info=True)
 
             finally:
+                if self.flag_error:
+                    # here we need to mark the job in DB
+                    logger.info(f'The job with ID is marked as FAILURE for the pipeline execution '
+                                f'for the control {self.control_id} with input params as '
+                                f'{self.control_params_dict}')
+
+                # Error in the closing procedures will not account for the job's status as all the work related to job
+                # has been accomplished.
                 self.do_closing_procedures()
                 logger.info(f' Closing procedures called - '
                             f' for the control {self.control_id} '
                             f' with input params as '
                             f'{self.control_params_dict}')
-
 
     def add_to_globals_dict(self, global_to_pipeline_item):
         # reserved for next dev cycle , here we will be able to add custom objects to the globals

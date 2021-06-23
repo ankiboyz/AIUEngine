@@ -37,7 +37,7 @@ def list_of_controls_per_engine():
     logger.info(f'List of Controls by this Engine Id {engine_id} are {control_list}')
 
     with BCM.app.app_context():
-        cntrl_ngn_assoc_obj = models.CCMControlEngineAssoc()
+        cntrl_ngn_assoc_obj = models.BCMControlEngineAssoc()
         query = cntrl_ngn_assoc_obj.query.filter_by(engine_id=engine_id).all()
         # print('cntrl_ngn_assoc_obj.query.filter_by().all()  --', query)
         # logger.debug(f' There are records in the control engine association table {query}')
@@ -56,7 +56,7 @@ def list_of_controls_per_engine():
             else:
                 multiproc = models.YesNoEnum.N
 
-            cntrl_ngn_assoc_obj = models.CCMControlEngineAssoc(control_id=cntrl_id, engine_id=engine_id
+            cntrl_ngn_assoc_obj = models.BCMControlEngineAssoc(control_id=cntrl_id, engine_id=engine_id
                                                                , is_multiproc=multiproc
                                                                , status=models.KafkaConsumerEnum.DOWN)
 

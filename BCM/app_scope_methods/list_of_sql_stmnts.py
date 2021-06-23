@@ -26,9 +26,9 @@ the method general_methods.get_the_sql_str_for_db is responsible for resolving t
 # with min start_dates whose consumers are down.
 
 SQL_ID_1_DEFAULT = f'SELECT A.CONTROL_ID, A.MIN_START_DATE, B.ID, C.STATUS FROM (select CONTROL_ID, MIN(START_DATE) AS \
-                   MIN_START_DATE from {models.CCMMonitorHDR.__dict__["__table__"]} WHERE STATUS IN (\'SUBMITTED\') GROUP BY CONTROL_ID) A, \
-                            {models.CCMMonitorHDR.__dict__["__table__"]} B, \
-                            {models.CCMControlEngineAssoc.__dict__["__table__"]} C \
+                   MIN_START_DATE from {models.BCMMonitorHDR.__dict__["__table__"]} WHERE STATUS IN (\'SUBMITTED\') GROUP BY CONTROL_ID) A, \
+                            {models.BCMMonitorHDR.__dict__["__table__"]} B, \
+                            {models.BCMControlEngineAssoc.__dict__["__table__"]} C \
                             WHERE \
                                 A.CONTROL_ID = B.CONTROL_ID \
                                 AND A.MIN_START_DATE=B.START_DATE \

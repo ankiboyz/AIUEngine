@@ -17,6 +17,9 @@ def method_tfa02_ifa19_1(appln_cntxt, db_session, mongo_client, control_params_d
 
     stg_op_response_obj = structured_response.StageOutputResponseDict()
 
+    with db_session.begin():    # to put in additional details for committing to DB if needed
+        pass
+
     # Setting transiently for now.
     control_params_dict["FUNCTION_ID"] = 'TFA02_COPY'
     control_params_dict["RUN_ID"] = '1b90f9d5-094d-4816-a8a8-8ddf04247486-1622726323002'

@@ -72,8 +72,13 @@ Appendix A - Automated Control Execution via Configurable Pipeline
        processor(i.e the method to be invoked). 
     d. Stage having proceed_to as EXIT would signal the end of the pipeline. 
     e. Stage having stage_type as 'processing' will do some processing and proceed_to will have a single value.
+    
     f. Stage having stage_type as 'decision' will make a decision as to move to which stage based on the logic
-       outputting boolean True/False.
+       outputting boolean True/False. Decision type node can either return True/False to take a decision whether to move to 
+       yes_ID Stage or to no_ID Stage. It can also either emit out exception in case its unhandled 
+       or it can also return value as 'ERROR' to denote the error happened in the execution.
+       The STATUS key of returned result dictionary can have values as True/False/ERROR.
+       
     g. Here, decision node currently have yes_ID and no_ID based on decision method's outcome as True/False
        Here, there would be a need for an error fork as well , in case if error happens then 
        decision cannot only be forked for true/false. Would be needed for advance use cases.; for now false also handles error cases.
