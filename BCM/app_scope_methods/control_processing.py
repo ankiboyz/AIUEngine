@@ -10,6 +10,8 @@ import BCM.app_scope_methods.control_logic_library.pipeline_config as pipeline_c
 import commons.connections.mongo_db_connections as mongo_db_conn
 import run    # this was causing issue as run was getting re-executed and the oracle client library was getting re-initialized.
 import BCM.models as models
+from commons.structured_response import StageOutputResponseDict as stage_response_dict_class
+import traceback
 
 logger = logging.getLogger(__name__)
 
@@ -123,6 +125,7 @@ class ControlLifecycleFlowchart:
         # initialize it with None , pls do not chane this val , its used later in closing procedures.
         # will be set later upon by the specific method
         self.db_session = None
+        self.response_list = list()     # Response list to be emitted as a part of final execution.
 
         # These attributes will be set by the class methods internally looking at the config.
         # Here, just assigning some initial values
@@ -180,8 +183,11 @@ class ControlLifecycleFlowchart:
             # initialization process will initiate an entry in the Child table.
             # Insert the initial entry into the Detail table to signal the PIPELINE_EXECUTION initiated.
             # returns the detail tables' id.
-            dtl_id = models.insert_into_detail_table(self.control_params_dict['ID'], 'PIPELINE_EXECUTION'
+            dtl_id = models.insert_into_detail_table(self.control_params_dict['ID'], STAGE_NAME_4_DB
                                                      , appln=self.appln)
+            
+            # herein, setting the ID for the JOB detail table in the dictionary.
+            self.set_additional_control_params_dict('JOB_DETAIL_ID', dtl_id)    # passing the key name and the value.
 
             # it has reached here so no exceptions encountered in set_db_session and set_control_params_dict().
             # also consider the bool_resp from set_pipeline method.
@@ -199,6 +205,15 @@ class ControlLifecycleFlowchart:
 
         return bool_op
 
+    def set_additional_control_params_dict(self, key_name, value):
+        '''
+        Setting additional details in the controls param dictionary.
+        '''
+        self.control_params_dict[key_name] = value
+        logger.info(f'Setting additional parameters for the dictionary for key as {key_name} and value as {value} '
+                    f'in the pipeline for {self.control_id} '
+                    f'with input params as {self.control_params_dict}')
+
     def set_control_params_dict(self):
         ''' The Kafka Producer only sets the control_params_dict as {ID:'',CONTROL_ID: ''}
             Setting additional keywords to the dictionary.
@@ -207,7 +222,8 @@ class ControlLifecycleFlowchart:
         # The first place we are looking for the additional parameters are the Request args those are stored in the
         # DB table. Once we get the DB session i.e we get the values from the PARAMETERS tab
         try:
-            # with self.db_session.begin(): # it seems that DB_Session need not be passed since models creates a db in the begining
+            # it seems that DB_Session need not be passed since models creates a db in the begining
+            # with self.db_session.begin():
             op_row = models.select_from_CCMMonitorHDR(self.control_params_dict['ID'], self.appln)
 
             # Since it is supposed to return  only one row ; list of result will have only one row.
@@ -384,6 +400,9 @@ class ControlLifecycleFlowchart:
             # copies the entire dictionary painstakingly created by the internal methods.
             return_val_dict = result_frm_method_called
 
+            # Here, we add to the response_list that will be emitted out
+            self.add_to_response_list(return_val_dict)
+
         else:
             self.signal_error(True)
             raise Exception(f' The method called outputted '
@@ -392,7 +411,15 @@ class ControlLifecycleFlowchart:
                             f'as {self.control_params_dict}')
         # returns the tuple (True, SUCCESS,
         # {'STATUS':, 'STATUS_COMMENTS':, 'DETAIL_SECTION':{KEY : {'value': value,'comment': comment text}}})
+
         return return_val_bool, reason_text, return_val_dict
+
+    def add_to_response_list(self, list_item):
+        ''' This method is used to add to the response list that will be emitted out conclusively showcasing the
+            operations undertaken as the final output.
+        '''
+
+        self.response_list.append(list_item)
 
     def execute_current_stage_processor(self):
         ''' This will execute the logic for the current stage.
@@ -513,6 +540,11 @@ class ControlLifecycleFlowchart:
 
                 # Calling the method to decipher the returned values
                 return_val_bool, reason_text, return_val_dict = self.format_returned_output(result_frm_method_called)
+                logger.info(f' Response dictionary is {return_val_dict} from the '
+                            f' the control '
+                            f'{self.control_id} in the stage {self.current_stage_ID} for the input params '
+                            f'{self.control_params_dict}'
+                            )
                 return return_val_bool
 
                 #
@@ -534,12 +566,40 @@ class ControlLifecycleFlowchart:
                              f' {self.control_params_dict} ', exc_info=True)
                 self.signal_error(True)
                 # if error-ed return the execution of this stage as False
+                # Also structure the response here to be added to the response dict
+                self.adding_exceptions_to_response_list(0, str(error), 'EXCEPTION_STACK_TRACE'
+                                                        , traceback.format_exc(), 'Error gathered')
+                # traceback.format_exc gives the exception string.
+                # stage_response_dict_obj = stage_response_dict_class()
+                # stage_response_dict_obj.add_to_status(0)
+                # stage_response_dict_obj.add_to_status_comments(str(error))
+                # stage_response_dict_obj.add_to_detail_section_dict('EXCEPTION_STACK_TRACE',traceback.format_exc, 'Error gathered')
+                # self.add_to_response_list(stage_response_dict_obj.method_op_dict)   # the dictionary is now added to the response list.
 
                 return False
 
                 # record the exception in the table for this execution
         # if nothing is evaluated from any of above code units, which should not be the case, return True
         return bool_op
+
+    def adding_exceptions_to_response_list(self, status, comments, detail_section_keyname,
+                                           detail_section_value, detail_section_comments):
+        ''' The structure of the response dict is as follows :
+            # {'STATUS': 'SUCCESS/FAILURE',
+            #  'STATUS_COMMENTS': 'executed_successfully/error obtained',
+            #  'DETAIL_SECTION': {
+            #     'DATABASE_NAME': {'value': 'PHILIPS_BCM', 'comment': 'This is the Mongo DB connected for this stage'},
+            #     'EXCEPTION_STACK_TRACE': {'value': 'This can be stack -trace',
+            #                  'comment': 'Error Gathered'}}}
+        '''
+        stage_response_dict_obj = stage_response_dict_class()
+        stage_response_dict_obj.add_to_status(status)
+        stage_response_dict_obj.add_to_status_comments(comments)
+        stage_response_dict_obj.add_to_detail_section_dict(detail_section_keyname, detail_section_value,
+                                                           detail_section_comments)
+        print(f'Added the exceptions to the response list here {stage_response_dict_obj.method_op_dict}')
+        self.add_to_response_list(
+            stage_response_dict_obj.method_op_dict)  # the dictionary is now added to the response list.
 
     def execute_pipeline(self):
         ''' This method once called will execute the entire pipeline. '''
@@ -583,11 +643,19 @@ class ControlLifecycleFlowchart:
                 if self.flag_error:
                     # Here, we need to mark the job in DB.
                     # 0 - Failure / 1 - Success
-                    models.update_detail_table(1, STAGE_NAME_4_DB, 'SUCCESS', '{}', self.appln)
+                    models.update_detail_table(self.control_params_dict['JOB_DETAIL_ID']
+                                               , 0     # denotes Failure
+                                               , list(reversed(self.response_list)) # sending the reversed list to be printed in clob column; error shows first
+                                               , self.appln)
 
                     logger.info(f'The job with ID is marked as FAILURE for the pipeline execution '
                                 f'for the control {self.control_id} with input params as '
                                 f'{self.control_params_dict}')
+                else:
+                    models.update_detail_table(self.control_params_dict['JOB_DETAIL_ID']
+                                               , 1  # denotes Success
+                                               , list(reversed(self.response_list))   # sending the reversed list to be printed in clob column ,here, we will pass the entire formulated response dict that's been created here.
+                                               , self.appln)
 
                 # Error in the closing procedures will not account for the job's status as all the work related to job
                 # has been accomplished.

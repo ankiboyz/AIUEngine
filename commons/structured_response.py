@@ -73,6 +73,15 @@ class StructuredResponse:
 
 class StageOutputResponseDict:
     ''' Method to formulate the stage output response to the outer pipeline '''
+    # {'STATUS': 'SUCCESS',
+    # 'STATUS_COMMENTS': 'executed_successfully',
+    # 'DETAIL_SECTION': {
+    #     'DATABASE_NAME': {'value': 'PHILIPS_BCM', 'comment': 'This is the Mongo DB connected for this stage'},
+    #     'FUNCTION_COLLECTION': {'value': 'TFA02_COPY',
+    #                             'comment': 'This is the Mongo DB collection operated upon for this stage'},
+    #     'RUN_ID': {'value': '1b90f9d5-094d-4816-a8a8-8ddf04247486-1622726323002',
+    #                'comment': 'This is the runID passed for this stage execution'},
+    #     'RESULT_FROM_OPERATION': {'value': 'UPDATE_MANY', 'comment': 'modified count = 0 matched count =  0 '}}}
 
     def __init__(self):
        self.method_op_dict = {'STATUS': '', 'STATUS_COMMENTS': '', 'DETAIL_SECTION': {}}

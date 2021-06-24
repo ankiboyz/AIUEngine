@@ -8,8 +8,9 @@ This file contains all the DB tables needed by the BCM App.
 from flask_sqlalchemy import SQLAlchemy
 import enum
 # from BCM.app_scope_methods import ccm_sequences
-from datetime import datetime
+from datetime import datetime, timedelta
 import logging
+from flask import current_app
 
 logger = logging.getLogger(__name__)
 
@@ -26,8 +27,9 @@ class StatusEnum(enum.Enum):
     # FAILED = 'FAILED'
     SUBMITTED = 'SUBMITTED'
     PROCESSING = 'PROCESSING'
-    FAILED = 'FAILED'
-    COMPLETED = 'COMPLETED'
+    FAILURE = 'FAILURE'
+    COMPLETED = 'COMPLETED'     # Keeping both completed and Success for now , but will be fine tuning it.
+    SUCCESS = 'SUCCESS'
 
 class StepNameEnum(enum.Enum):
     # SUBMITTED = 'SUBMITTED'
@@ -227,8 +229,10 @@ def insert_into_detail_table(header_id, step_name, appln):
     ''' This method will insert the entries into the Detail table for the job.
         This method will need to get the following info:
             1. The run sequence determines the sequence of run, in case of the retries , this will be useful.
+        Returns the job detail id for the entry inserted in the DB.
     '''
 
+    # this should not be needed anymore since the app_context() is pushed in the initialization proccs of pipeline
     with appln.app_context():
         # .begin takes care of commit ; in case of error it rollbacks and raises the exception
         # with db.session.begin(): #This one is not working for flask-sqlalchemy , its not issueing commit.
@@ -265,6 +269,7 @@ def insert_into_detail_table(header_id, step_name, appln):
         bcm_monitor_dtl.status = StatusEnum.SUBMITTED
         bcm_monitor_dtl.header_id = header_id
         db.session.add(bcm_monitor_dtl)
+
         try:
             db.session.commit()
             print(f'Committing the entries into the db {bcm_monitor_dtl}')
@@ -274,19 +279,115 @@ def insert_into_detail_table(header_id, step_name, appln):
             raise error
         return bcm_monitor_dtl.id
 
-def update_detail_table(child_header_id, step_name, status, comments, appln):
+
+def update_detail_table(job_detail_id, status, comments, appln):
     ''' This method will be used to update the status of the child_header_id.
         The comments will be passed to be updated in the detail table.
         If we are not making use of app.app_context then the current app proxy should be live . ie context is pushed.
         Flask context: https://testdriven.io/blog/flask-contexts/
-    '''
-    # Here, without making use of app the session execution happened, because the context has been pushed in the
-    # initialization procedure of the pipeline execution.
-    bcm_monitor_dtl = BCMMonitorDTL()
-    query_4_max_run_seq = bcm_monitor_dtl.query.filter_by(header_id=child_header_id).all()
-    print('update_detail_table- query executed', query_4_max_run_seq)
-    max_run_sequence = 0
 
+        Since the Failure of the step signal the failure of the Header ID job as well, so signalling that from here.
+    '''
+    with db.session():
+
+        # Here, without making use of app the session execution happened, because the context has been pushed in the
+        # initialization procedure of the pipeline execution.
+        bcm_monitor_dtl = BCMMonitorDTL()
+
+        # since its the key only one is constrained to be available.
+        job_dtl_id_row_2_update = bcm_monitor_dtl.query.filter_by(id=job_detail_id).first()
+        # job_dtl_id_row_2_update = bcm_monitor_dtl.get(id=job_detail_id)
+        # since this is first() so this is a row object.
+        print('update_detail_table- query executed', job_dtl_id_row_2_update)
+
+        if status == 0:
+            status_enum_value = StatusEnum.FAILURE
+        if status == 1:
+            status_enum_value = StatusEnum.SUCCESS
+
+        job_dtl_id_row_2_update.status = status_enum_value
+        job_dtl_id_row_2_update.updated_date = datetime.now()
+
+        job_dtl_id_row_2_update.end_date = datetime.now()
+        job_dtl_id_row_2_update.duration = (job_dtl_id_row_2_update.end_date - job_dtl_id_row_2_update.start_date)/timedelta(minutes=1)
+        # job_dtl_id_row_2_update.duration = job_dtl_id_row_2_update.end_date - job_dtl_id_row_2_update.start_date
+
+        job_dtl_id_row_2_update.comments = str(comments)    # only string values else will error out.
+        # max_run_sequence = 0
+        # print(f'committing to the DB', db.session.dirty, db.session.new)
+        # db.session.commit()
+
+        # We will also mark the header job as failure.
+        job_header_id = job_dtl_id_row_2_update.header_id
+        db.session.commit()
+        try:
+            # db.session.merge(job_dtl_id_row_2_update)
+            logger.debug(f'committing to the DB for the job detail id {job_detail_id}', db.session.dirty, db.session.new)
+            db.session.commit()
+            # Once the detail updated , updating the Header ID as well.
+            if status == 0:
+                # Only to be called if there is a Failure, since the header is dependent
+                # on multiple child so if this pipeline_execution passes but the ack to ebcp does not pass
+                # still the main job header is in fail state as it needs to be retried.
+                # and also comments will be pertaining to the one that failed the job.
+                update_header_table(job_header_id, 0, comments, appln)
+
+        except Exception as error:
+            db.session.rollback()
+            logger.error(f' Got error while updating the DB for the job detail ID {job_detail_id}; error as {error}')
+            # raise error # Not raising it as it is in the final block of the pipeline execution
+
+
+def update_header_table(job_header_id, status, comments, appln):
+    ''' This is the method to update the header table with the final status'''
+
+    with db.session():
+
+        # Here, without making use of app the session execution happened, because the context has been pushed in the
+        # initialization procedure of the pipeline execution.
+        bcm_monitor_hdr = BCMMonitorHDR()
+
+        # since its the key only one is constrained to be available.
+        job_hdr_id_row_2_update = bcm_monitor_hdr.query.filter_by(id=job_header_id).first()
+        # since this is first() so this is a row object.
+        print('update_detail_table- query executed', job_hdr_id_row_2_update)
+
+        if status == 0:
+            status_enum_value = StatusEnum.FAILURE
+        if status == 1:
+            status_enum_value = StatusEnum.SUCCESS
+
+        job_hdr_id_row_2_update.status = status_enum_value
+
+        # Its important to update updated date after the duration been calculated.
+        # For retrials the creation date could the creation date as of 1 st trial , but we want duration for the
+        # current trial.
+        # job_hdr_id_row_2_update.updated_date = datetime.now()
+
+        job_hdr_id_row_2_update.end_date = datetime.now()
+
+        # Here for the Header the duration should be between the Updated and End Date.
+        # as job header can be updated for Retrials later upon. End date will be picked up as we have set here in the session.
+        job_hdr_id_row_2_update.duration = (job_hdr_id_row_2_update.end_date - job_hdr_id_row_2_update.updated_date)/timedelta(minutes=1)
+        # job_dtl_id_row_2_update.duration = job_dtl_id_row_2_update.end_date - job_dtl_id_row_2_update.start_date
+
+        job_hdr_id_row_2_update.updated_date = datetime.now()
+        job_hdr_id_row_2_update.comments = str(comments)    # only string values else will error out.
+        # max_run_sequence = 0
+        # print(f'committing to the DB', db.session.dirty, db.session.new)
+        # db.session.commit()
+
+        # We will also mark the header job as failure.
+
+        try:
+            # db.session.merge(job_dtl_id_row_2_update)
+            logger.debug(f'committing to the DB for the job Header id {job_header_id}', db.session.dirty, db.session.new)
+            db.session.commit()
+
+        except Exception as error:
+            db.session.rollback()
+            logger.error(f' Got error while updating the DB for the job Header ID {job_header_id}; error as {error}')
+            # raise error # Not raising it as it is in the final block of the pipeline execution
 
 # For unit testing:
 # if __name__ == "__main__":
