@@ -13,6 +13,8 @@ import BCM.models as models
 
 logger = logging.getLogger(__name__)
 
+STAGE_NAME_4_DB ='PIPELINE_EXECUTION'
+
 # Each dictionary item is keyed in by the control_id.
 # Each control_id key has value as the list of the dictionaries.
 # Each dictionary item in the value denote a path of code to be executed.
@@ -175,6 +177,11 @@ class ControlLifecycleFlowchart:
             # This needs to be done before to get the db connection for the control_params_dict to get the data.
             self.set_db_session()
             self.set_control_params_dict()
+            # initialization process will initiate an entry in the Child table.
+            # Insert the initial entry into the Detail table to signal the PIPELINE_EXECUTION initiated.
+            # returns the detail tables' id.
+            dtl_id = models.insert_into_detail_table(self.control_params_dict['ID'], 'PIPELINE_EXECUTION'
+                                                     , appln=self.appln)
 
             # it has reached here so no exceptions encountered in set_db_session and set_control_params_dict().
             # also consider the bool_resp from set_pipeline method.
@@ -267,8 +274,10 @@ class ControlLifecycleFlowchart:
         Once done the end of the pipeline stage will close the session - in order to free up the resources.
         '''
         try:
-            with self.appln.app_context():
-                self.db_session = self.db.session()
+            # with self.appln.app_context():
+            # Here we will set the app_context , such that current_app proxy can now be live, in the rest of the executions.
+            self.appln.app_context().push()         # Now, this will make the current_app proxy live and context will be available throughout the executions.
+            self.db_session = self.db.session()
 
         except Exception as error:
             logger.error(f' Error in getting the Database session in the pipeline for control {self.control_id} '
@@ -572,7 +581,10 @@ class ControlLifecycleFlowchart:
 
             finally:
                 if self.flag_error:
-                    # here we need to mark the job in DB
+                    # Here, we need to mark the job in DB.
+                    # 0 - Failure / 1 - Success
+                    models.update_detail_table(1, STAGE_NAME_4_DB, 'SUCCESS', '{}', self.appln)
+
                     logger.info(f'The job with ID is marked as FAILURE for the pipeline execution '
                                 f'for the control {self.control_id} with input params as '
                                 f'{self.control_params_dict}')

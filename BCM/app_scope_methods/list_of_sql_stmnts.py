@@ -36,3 +36,9 @@ SQL_ID_1_DEFAULT = f'SELECT A.CONTROL_ID, A.MIN_START_DATE, B.ID, C.STATUS FROM 
                                 AND C.ENGINE_ID = \'{config.ENGINE_ID}\' \
                                 AND C.STATUS = \'DOWN\' \
                     ORDER BY A.MIN_START_DATE ASC'
+
+# This is the SQL to find out the maximum run sequence for the detail table.
+# The value of {HEADER_ID} being replaced will be the onus of the query executor.
+# For Oracle the bind parameters can be provided as below, it needs be supported by read_sql method of pandas for
+# the respective database. Here, it is :HEADER_ID
+# SQL_ID_2_DEFAULT = 'SELECT NVL(MAX(RUN_SEQUENCE),0) FROM glt_ccm_xtnd_monitor_detail WHERE HEADER_ID = :HEADER_ID'

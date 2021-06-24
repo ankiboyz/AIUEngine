@@ -56,9 +56,17 @@ class CCMHeader:
         ccmhdr.created_date = datetime.now()
         ccmhdr.updated_date = datetime.now()
 
-        ret_op = ccm_sequences.sequences_provider(ip_tablename='glt_ccm_xtnd_monitor_header',
-                                                  ip_columnname='id',
-                                                  ip_batchsize=1)
+        # this provides the string repr of the object returned, string is needed else error in the sequence provider
+        bcm_monitor_hdr_table_name = f'{models.BCMMonitorHDR.__dict__["__table__"]}'
+
+        print('bcm_monitor_hdr_table_name', bcm_monitor_hdr_table_name, type(bcm_monitor_hdr_table_name))
+        # ret_op = ccm_sequences.sequences_provider(ip_tablename='glt_ccm_xtnd_monitor_header',
+        #                                           ip_columnname='id',
+        #                                           ip_batchsize=1)
+        # this also to be under try purview
+        ret_op = models.sequences_provider(ip_tablename=bcm_monitor_hdr_table_name,
+                                           ip_columnname='id',
+                                           ip_batchsize=1, appln=current_app)
         ccmhdr.id = ret_op['start_value']  # since batchsize was given as 1, so start and end will be same.
         db.session.add(ccmhdr)
 
