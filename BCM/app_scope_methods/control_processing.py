@@ -7,11 +7,13 @@ Objective : This module consists of methods those will be providing
 '''
 import logging, json
 import BCM.app_scope_methods.control_logic_library.pipeline_config as pipeline_config
-import commons.connections.mongo_db_connections as mongo_db_conn
+import BCM.app_scope_methods.control_logic_library.control_metadata as control_metadata
+import commons.external_app_specifics.mongo_db as mongo_db_conn
 import run    # this was causing issue as run was getting re-executed and the oracle client library was getting re-initialized.
 import BCM.models as models
 from commons.structured_response import StageOutputResponseDict as stage_response_dict_class
 import traceback
+from flask import current_app
 
 logger = logging.getLogger(__name__)
 
@@ -233,12 +235,27 @@ class ControlLifecycleFlowchart:
             # \"EXCEPTION_COLLECTION_NAME\": \"EXCEPTION_TFA02_IFA19_1\",
             # \"FUNCTION_ID\": \"TFA02_COPY\"}"
 
-            list_of_params_dict = json.loads(op_row[0].parameters)
+            list_of_params_dict = json.loads(op_row[0].parameters)  # taking the PARAMETERS column value from Job Header table.
 
             logger.debug(f'list_of_params_dict modified, {type(list_of_params_dict)}, {list_of_params_dict}')
 
             # Here, we will merge the 2 dicts in place, 2nd argument will override the first one
             self.control_params_dict = {**self.control_params_dict, **list_of_params_dict}
+
+            # Also add the LIMIT_OF_RECS_PROCESSED from the configurations.
+            self.control_params_dict['LIMIT_OF_RECS_PROCESSED'] = current_app.config['LIMIT_OF_RECS_PROCESSED']
+
+            # Here, for the control take specifics from the control_metadata
+            global_settings_for_all_controls_dict = control_metadata.GLOBAL_CONTROLS_METADATA
+            specific_settings_for_the_specific_control_dict = control_metadata.SPECIFIC_CONTROLS_METADATA.get(self.control_id
+                                                                                                         , {})
+            # Here specific settings are overriding the global settings hence merge dict below
+            # has specific settings overriding the global settings.
+            net_settings_to_be_added_dict = {**global_settings_for_all_controls_dict
+                                             , **specific_settings_for_the_specific_control_dict}
+
+            # Merging into the final dictionary
+            self.control_params_dict = {**self.control_params_dict, **net_settings_to_be_added_dict}
 
             logger.debug(f' The modified parameters dictionary is as {self.control_params_dict}')
 
@@ -283,6 +300,10 @@ class ControlLifecycleFlowchart:
             logger.info(f' DB Session is closed after executing the pipeline for the control {self.control_id} '
                         f' with input params as '
                         f'{self.control_params_dict}')
+        # Also will pop out the context to be GC-ed henceforth. It was pushed in set_db_session method.
+        # self.appln.app_context().pop()    # throws error as AssertionError: Popped wrong app context.  (<flask.ctx.AppContext object at 0x09F06A30> instead of <flask.ctx.AppContext object at 0x099D1B90>)
+        # current_app.app_context().pop() this also throws the same error
+        # So now we will use the context manager with app.app_context() in the execute pipeline method.
 
     def set_db_session(self):
         ''' This method will set the db session for the pipeline.
@@ -292,7 +313,8 @@ class ControlLifecycleFlowchart:
         try:
             # with self.appln.app_context():
             # Here we will set the app_context , such that current_app proxy can now be live, in the rest of the executions.
-            self.appln.app_context().push()         # Now, this will make the current_app proxy live and context will be available throughout the executions.
+            # self.appln.app_context().push()         # Now, this will make the current_app proxy live and context will be available throughout the executions.
+            # since the corresponding pop was giving issues hence used the with app.app_context in the execute pipeline the starting point of all methods called.
             self.db_session = self.db.session()
 
         except Exception as error:
@@ -606,64 +628,65 @@ class ControlLifecycleFlowchart:
 
         # set_pipeline sets up the pipeline as well as the initial stage.
         # if self.set_pipeline():
-        if self.pipeline_initialization_procedures():
+        with self.appln.app_context():      # Now, this sets the application context for the entire pipeline execution and will take care of teardown of app_context as well.
+            if self.pipeline_initialization_procedures():
 
-            pipeline_list_of_stages = self.get_pipeline()
+                pipeline_list_of_stages = self.get_pipeline()
 
-            # loop in till the exit is NOT flagged as True
-            logger.info(f' Pipeline execution for the control {self.control_id} with input params as '
-                        f'{self.control_params_dict} '
-                        f'started ...')
-            try:
-                while not self.flag_exit:
-                    # for stage in pipeline_list_of_stages:
+                # loop in till the exit is NOT flagged as True
+                logger.info(f' Pipeline execution for the control {self.control_id} with input params as '
+                            f'{self.control_params_dict} '
+                            f'started ...')
+                try:
+                    while not self.flag_exit:
+                        # for stage in pipeline_list_of_stages:
 
-                    # set the current stage
-                    # self.set_current_stage(stage["ID"], stage["STAGE"])
-                    logger.info(f' Pipeline execution for the control {self.control_id} with input params as '
-                                f'{self.control_params_dict} moved to the stage {self.current_stage_ID} '
-                               )
-                    print(self.current_stage, self.current_stage_ID, self.current_stage.name)
+                        # set the current stage
+                        # self.set_current_stage(stage["ID"], stage["STAGE"])
+                        logger.info(f' Pipeline execution for the control {self.control_id} with input params as '
+                                    f'{self.control_params_dict} moved to the stage {self.current_stage_ID} '
+                                   )
+                        print(self.current_stage, self.current_stage_ID, self.current_stage.name)
 
-                    # Do processing of the current_stage.
-                    bool_op_current_stage = False
-                    bool_op_current_stage = self.execute_current_stage_processor()
+                        # Do processing of the current_stage.
+                        bool_op_current_stage = False
+                        bool_op_current_stage = self.execute_current_stage_processor()
 
-                    # Once done , go to the next stage and pass to it the status of the previous stage
-                    # (i.e. the current stage that was) executed
-                    self.goto_next_stage(bool_op_current_stage)
+                        # Once done , go to the next stage and pass to it the status of the previous stage
+                        # (i.e. the current stage that was) executed
+                        self.goto_next_stage(bool_op_current_stage)
 
-            except Exception as error:
-                self.signal_error(True)
-                logger.error(f'Following error signalled while executing pipeline for the control {self.control_id} '
-                             f'with input params as '
-                             f'{self.control_params_dict} error being {error} ', exc_info=True)
+                except Exception as error:
+                    self.signal_error(True)
+                    logger.error(f'Following error signalled while executing pipeline for the control {self.control_id} '
+                                 f'with input params as '
+                                 f'{self.control_params_dict} error being {error} ', exc_info=True)
 
-            finally:
-                if self.flag_error:
-                    # Here, we need to mark the job in DB.
-                    # 0 - Failure / 1 - Success
-                    models.update_detail_table(self.control_params_dict['JOB_DETAIL_ID']
-                                               , 0     # denotes Failure
-                                               , list(reversed(self.response_list)) # sending the reversed list to be printed in clob column; error shows first
-                                               , self.appln)
+                finally:
+                    if self.flag_error:
+                        # Here, we need to mark the job in DB.
+                        # 0 - Failure / 1 - Success
+                        models.update_detail_table(self.control_params_dict['JOB_DETAIL_ID']
+                                                   , 0     # denotes Failure
+                                                   , list(reversed(self.response_list)) # sending the reversed list to be printed in clob column; error shows first
+                                                   , self.appln)
 
-                    logger.info(f'The job with ID is marked as FAILURE for the pipeline execution '
-                                f'for the control {self.control_id} with input params as '
+                        logger.info(f'The job with ID is marked as FAILURE for the pipeline execution '
+                                    f'for the control {self.control_id} with input params as '
+                                    f'{self.control_params_dict}')
+                    else:
+                        models.update_detail_table(self.control_params_dict['JOB_DETAIL_ID']
+                                                   , 1  # denotes Success
+                                                   , list(reversed(self.response_list))   # sending the reversed list to be printed in clob column ,here, we will pass the entire formulated response dict that's been created here.
+                                                   , self.appln)
+
+                    # Error in the closing procedures will not account for the job's status as all the work related to job
+                    # has been accomplished.
+                    self.do_closing_procedures()
+                    logger.info(f' Closing procedures called - '
+                                f' for the control {self.control_id} '
+                                f' with input params as '
                                 f'{self.control_params_dict}')
-                else:
-                    models.update_detail_table(self.control_params_dict['JOB_DETAIL_ID']
-                                               , 1  # denotes Success
-                                               , list(reversed(self.response_list))   # sending the reversed list to be printed in clob column ,here, we will pass the entire formulated response dict that's been created here.
-                                               , self.appln)
-
-                # Error in the closing procedures will not account for the job's status as all the work related to job
-                # has been accomplished.
-                self.do_closing_procedures()
-                logger.info(f' Closing procedures called - '
-                            f' for the control {self.control_id} '
-                            f' with input params as '
-                            f'{self.control_params_dict}')
 
     def add_to_globals_dict(self, global_to_pipeline_item):
         # reserved for next dev cycle , here we will be able to add custom objects to the globals

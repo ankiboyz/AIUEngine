@@ -50,9 +50,10 @@ for the project:
 
 
 Mongo DB privileges needed by the Mongo Connector user:
-1. Create collection
-2. Create Indexes
-3. Ability to run aggregation pipeline on the collection
+1. List Collection
+2. Create collection - first code lists the collections , if not found creates it.
+3. Create Indexes
+4. Ability to run aggregation pipeline on the collection
 
 Some imp notes:
 Mongo DB 4.4 onwards $merge have been provided with the ability to merge records into the
