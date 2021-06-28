@@ -242,8 +242,8 @@ class ControlLifecycleFlowchart:
             # Here, we will merge the 2 dicts in place, 2nd argument will override the first one
             self.control_params_dict = {**self.control_params_dict, **list_of_params_dict}
 
-            # Also add the LIMIT_OF_RECS_PROCESSED from the configurations.
-            self.control_params_dict['LIMIT_OF_RECS_PROCESSED'] = current_app.config['LIMIT_OF_RECS_PROCESSED']
+            # Also add the LIMIT_FOR_RECS_PROCESSING_IN_ONE_ITERATION from the configurations.
+            self.control_params_dict['LIMIT_FOR_RECS_PROCESSING_IN_ONE_ITERATION'] = current_app.config['LIMIT_FOR_RECS_PROCESSING_IN_ONE_ITERATION']
 
             # Here, for the control take specifics from the control_metadata
             global_settings_for_all_controls_dict = control_metadata.GLOBAL_CONTROLS_METADATA
@@ -267,6 +267,8 @@ class ControlLifecycleFlowchart:
                          )
             self.signal_error(True)
             self.signal_exit(True)
+            self.adding_exceptions_to_response_list(0, str(error), 'EXCEPTION_STACK_TRACE'
+                                                    , traceback.format_exc(), 'Error gathered')
 
     def signal_exit(self, bool_val):
         ''' True to Exit; False to not Exit '''

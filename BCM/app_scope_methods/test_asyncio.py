@@ -56,28 +56,63 @@ import asyncio
 import time
 from concurrent.futures import ThreadPoolExecutor
 
+#
+# _executor = ThreadPoolExecutor(1)
+# consumer1 = KafkaConsumer("REALIZER", bootstrap_servers=["localhost:9092"], auto_offset_reset="earliest"
+#                               , enable_auto_commit=True, group_id="REALIZER")
+#
+#
+# def sync_blocking():
+#     time.sleep(10)
+#     r = consumer1.poll(timeout_ms=1000, max_records=1, update_offsets=True)
+#     # time.sleep(2)
+#     return r
 
-_executor = ThreadPoolExecutor(1)
-consumer1 = KafkaConsumer("REALIZER", bootstrap_servers=["localhost:9092"], auto_offset_reset="earliest"
-                              , enable_auto_commit=True, group_id="REALIZER")
 
-
-def sync_blocking():
-    time.sleep(10)
-    r = consumer1.poll(timeout_ms=1000, max_records=1, update_offsets=True)
-    # time.sleep(2)
-    return r
-
-
-async def hello_world():
-    # run blocking function in another thread,
-    # and wait for it's result:
-    # consumer1 = KafkaConsumer("REALIZER", bootstrap_servers=["localhost:9092"], auto_offset_reset="earliest"
-    #                           , enable_auto_commit=True, group_id="REALIZER")
-
-    r = await loop.run_in_executor(_executor, sync_blocking)
-    print(r)
-
-loop = asyncio.get_event_loop()
-loop.run_until_complete(hello_world())
-loop.close()
+# async def hello_world():
+#     # run blocking function in another thread,
+#     # and wait for it's result:
+#     # consumer1 = KafkaConsumer("REALIZER", bootstrap_servers=["localhost:9092"], auto_offset_reset="earliest"
+#     #                           , enable_auto_commit=True, group_id="REALIZER")
+#
+#     r = await loop.run_in_executor(_executor, sync_blocking)
+#     print(r)
+#
+# loop = asyncio.get_event_loop()
+# loop.run_until_complete(hello_world())
+# loop.close()
+# import BCM.app_scope_methods.control_logic_library.list_of_mongo_statements as list_of_mongo_statements
+AG_PIPELINE_TFA02_IFA19_1_3 = '[{{"$match": {{"runID": {{"$eq": "{run_id}" }}\
+                                                                 ,"GLT_is_this_realized": {{"$ne": "DONE"}} \
+                                                                }}\
+                                                     }}, # refer all  those where neq DONE\
+                              {{"$limit": {limit_for_recs_processing_in_one_iteration}}}\
+                              # {{"$project": {{"_id": 0}}}}, # comment this bcoz on the Function Collection no unique key on COMPOSITEKEY\
+                             ,{{"$addFields" : {{"GLT_lastUpdatedDateTime": datetime.datetime.utcnow()\
+                                             , "GLT_is_this_realized": "IN-PROCESS"	# \
+                                              }}\
+                              }}\
+                             ,{{"$merge" : {{ "into": "{function_id}"\
+                                          , "on": "_id" # to be on the _id\
+                                          , "whenMatched":[ # not merging here, coz there could have been some other fields updated by workflow or other engine\
+                                                         {{"$addFields":\
+                                                                    {{"GLT_lastUpdatedDateTime": "$$new.GLT_lastUpdatedDateTime"\
+                                                                    ,"GLT_is_this_realized": "$$new.GLT_is_this_realized"\
+                                                                    }}\
+                                                         }}\
+                                                        ]\
+                                          , "whenNotMatched": "discard" }} # this should not be the case since the doc is picked from this source only\
+                              }},\
+                              ]'
+function_id = 'TFA02_COPY'
+run_id = 123
+limit_for_recs_processing_in_one_iteration = 10
+mongo_pipeline_code_str = AG_PIPELINE_TFA02_IFA19_1_3
+call_to_be_executed_pre_str = 'db_from_uri_string.{function_id}.aggregate(' \
+                                      + mongo_pipeline_code_str \
+                                      + ',allowDiskUse=True)'
+returned_op_str = 'AA'
+start_time = time.time()
+call_to_get_execution_str = 'returned_op_str=' + 'f\'' + call_to_be_executed_pre_str + '\''
+dynamic_execution_to_stringify_call = exec(call_to_get_execution_str)
+print(returned_op_str, dynamic_execution_to_stringify_call)

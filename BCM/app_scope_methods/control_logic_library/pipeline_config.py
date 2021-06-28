@@ -41,7 +41,7 @@ PIPELINE = {'TFA02_IFA19_1':
                                           , proceed_to='STAGE3')
                          , "STAGE_PROCESSOR": StageProcessor(path_to_module='BCM.app_scope_methods'
                                                                             '.control_logic_library.control_TFA02_IFA19'
-                                                             , method_name='method_tfa02_ifa19_13')
+                                                             , method_name='method_tfa02_ifa19_2')
                          },
                         {"ID": "STAGE3"
                          , "STAGE": Stage(name="PROCESS_AND_MERGE"
@@ -51,7 +51,7 @@ PIPELINE = {'TFA02_IFA19_1':
                                           , proceed_to='STAGE4')
                          , "STAGE_PROCESSOR": StageProcessor(path_to_module='BCM.app_scope_methods'
                                                                             '.control_logic_library.control_TFA02_IFA19'
-                                                             , method_name='')
+                                                             , method_name='method_tfa02_ifa19_3')
                          },
                         {"ID": "STAGE4"
                          , "STAGE": Stage(name="MARK_PROCESSED_RECS"

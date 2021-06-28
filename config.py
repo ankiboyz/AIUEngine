@@ -48,8 +48,8 @@ class Config(object):
     LIST_OF_CONTROLS = ['PAY05', 'TFA02_IFA19_1', 'TFA02_IFA19_SC7', 'TRE07', 'TFA02_IFA19_1']
 
     # This is the maximum limit of the records to be processed in one iteration in MONGO for a control.
-    LIMIT_OF_RECS_PROCESSED = 10
-    INDEXES_FOR_CONTROLS = [{"TFA02_IFA19_1": [] }]
+    # This is maintained in the control metadata now.
+    LIMIT_FOR_RECS_PROCESSING_IN_ONE_ITERATION = 10
 
     # Out of the list of controls (as specified in LIST_OF_CONTROLS) below lists which all controls need to have
     # multiprocessing mode i.e. wherein the control processing would require CPU of engine to do some intermediary

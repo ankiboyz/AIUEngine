@@ -84,7 +84,7 @@ Appendix A - Automated Control Execution via Configurable Pipeline
        Here, there would be a need for an error fork as well , in case if error happens then 
        decision cannot only be forked for true/false. Would be needed for advance use cases.; for now false also handles error cases.
     h. processing type of stage returns boolean op : True denotes exec happened fine, False denotes some error happened.
-       the stage processor methods can return the boolean o/p or a response dictinary of a specific structure.
+       the stage processor methods can return the boolean o/p or a response dictionary of a specific structure.
     e. Every Stage should have the STAGE_PROCESSOR key , if no method need be invoked then put in blank for method,
        if no module need be imported then put in blank for module; if no logic need be executed in this stage,
        then just put in blank for both module and method ; but stage should have the STAGE_PROCESSOR key.
@@ -106,3 +106,10 @@ Appendix A - Automated Control Execution via Configurable Pipeline
         1. Mongo DB name , connector ID to be a part of the parameters in the pipeline.
         2. There can be pipeline globals and overrides in each of the stages.
         3. For multi thread and multi proc , components like fork-safe and thread-safe would be configurable; example MongoClient.
+        
+    There are certain parameters which are made available in the pipeline execution stored in the params dictionary.
+    The values populated in this dictionary are from:
+    1. if Kafka been used then the values in the message ie ID, CONTROL_ID
+    2. the values from the JOB Header tables PARAMETERS column 
+    3. control metadata file that has got global and control specific settings.
+    The control_processing --> set_control_params_dict is the method to populate this.
