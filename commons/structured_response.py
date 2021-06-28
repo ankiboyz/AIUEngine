@@ -88,11 +88,18 @@ class StageOutputResponseDict:
 
     def add_to_detail_section_dict(self, keyname, value, comment):
         ''' Method to add to the detail section of the response to be passed from the stage to the pipeline'''
-        self.method_op_dict['DETAIL_SECTION'][keyname] = {'value':value, 'comment': comment}
+        self.method_op_dict['DETAIL_SECTION'][keyname] = {'value': value, 'comment': comment}
 
-    def add_to_status(self,status):
+    def add_to_status(self, status):
         ''' set to SUCCESS if 1 is passed else Failure for all other values'''
-        self.method_op_dict['STATUS'] = 'SUCCESS' if status == 1 else 'FAILURE'
+        # self.method_op_dict['STATUS'] = 'SUCCESS' if status == 1 else 'FAILURE'
+        if status == 1:
+            self.method_op_dict['STATUS'] = 'SUCCESS'
+        elif status == 0:
+            self.method_op_dict['STATUS'] = 'FAILURE'
+        else:
+            self.method_op_dict['STATUS'] = status      # for eg yesID, noID passed for decision type of nodes.
+
 
     def add_to_status_comments(self, status_comments):
         self.method_op_dict['STATUS_COMMENTS'] = status_comments

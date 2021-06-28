@@ -280,7 +280,10 @@ class ControlLifecycleFlowchart:
             self.flag_exit = False
 
     def signal_error(self, bool_val):
-        ''' True to flag error encountered; False to reset the flag to False '''
+        ''' True to flag error encountered; False to reset the flag to False
+        To verify if the error has been signalled, the exit should also be signalled?
+        - This is done in the execute_pipeline method.
+        '''
         if bool_val:
             self.flag_error = True
             logger.info(f' Setting the Error flag for the pipeline for {self.control_id} with input params as '
@@ -410,12 +413,19 @@ class ControlLifecycleFlowchart:
 
         elif isinstance(result_frm_method_called, dict):
             # if the response is a dict
-            return_val_bool = True if result_frm_method_called.get('STATUS', False) == 'SUCCESS' else False
+            # a decision node will emit either yesID, noID
+            # so three values denote successful execution 'yesID','noID','SUCCESS';
+            # for decision node yesID , SUCCESS denotes boolean flag be True
+            # for value as noID , FAILURE denote flag be False and for decision node the return_val_bool is
+            # evaluated differently.
+            # For decision node return_val_bool True/False makes way for either yesID or noID to be followed.
+            return_val_bool = True if result_frm_method_called.get('STATUS', False) in ['SUCCESS', 'yesID'] else False
 
             # This is to accommodate the case when decision node runs into error, so only True / False is nt sufficient.
-            is_error_encountered = True if result_frm_method_called.get('STATUS', False) == 'ERROR' else False
+            # values of FAILURE, ERROR as status will denote error encountered.
+            is_error_encountered = True if result_frm_method_called.get('STATUS', False) not in ['yesID', 'noID', 'SUCCESS'] else False
             if is_error_encountered:
-                self.signal_error(True)
+                self.signal_error(True)     # exit flag is placed in the execute pipeline as checks the error flag there method.
 
             # Boolean and String comparison does not throw an error.
             reason_text = 'SUCCESS' if result_frm_method_called.get('STATUS', False) == 'SUCCESS' else \
@@ -654,9 +664,14 @@ class ControlLifecycleFlowchart:
                         bool_op_current_stage = False
                         bool_op_current_stage = self.execute_current_stage_processor()
 
-                        # Once done , go to the next stage and pass to it the status of the previous stage
-                        # (i.e. the current stage that was) executed
-                        self.goto_next_stage(bool_op_current_stage)
+                        if not self.flag_error:
+                            # if there is no error encountered
+                            # Once done , go to the next stage and pass to it the status of the previous stage
+                            # (i.e. the current stage that was) executed
+                            self.goto_next_stage(bool_op_current_stage)
+                        else:
+                            # exit because of the error
+                            self.signal_exit(True)
 
                 except Exception as error:
                     self.signal_error(True)
