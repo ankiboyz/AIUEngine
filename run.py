@@ -3,6 +3,8 @@ import cx_Oracle
 from BCM.app_scope_methods import controls_per_engine
 import logging, time, threading
 from BCM.app_scope_methods import job_handler
+import config
+import platform
 
 logger = logging.getLogger(__name__)
 print(logger.parent, 'parent of run logger')
@@ -53,11 +55,22 @@ if __name__ == "__main__":
     # app.run()
 
     # initializing the cx_Oracle client to connect to the Oracle database.
-    cx_Oracle.init_oracle_client(lib_dir=BCM.app.config["ORACLE_CLIENT_PATH"])
+    # For windows passing in lib_dir=path works and oracle instant client is not needed to be installed.
+    # just being unzipped to a folder works.
+    print(f'Identified platform as {platform.system()} and more details on service pack is {platform.platform()}')
+    if platform.system().upper() =='WINDOWS':
+        cx_Oracle.init_oracle_client(lib_dir=BCM.app.config["ORACLE_CLIENT_PATH"])
+    else:
+        # Here in Linux etc. it is expected the oracle instant client is installed already.
+        # and lib_dir=path_to_instant_client do not have any impact
+        cx_Oracle.init_oracle_client()
 
     appln, db = create_ccm_app()    # as it returns the tuple of application and db
     try:
-        appln.run()
+        # with host="0.0.0.0" argument the up application is run on all IPs of this server
+        # and can be reached from the external world.
+        # appln.run(host="0.0.0.0", port='50008')
+        appln.run(host=config.HOST_IP, port=config.PORT)
     finally:
         logger.info("Finally block in the application stop ")
         print("Finally block in the application stop ")  # in case logger is not initialized when the application stops

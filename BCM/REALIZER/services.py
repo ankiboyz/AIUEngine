@@ -72,7 +72,9 @@ class CCMHeader:
 
         # Setting up the variables which would be used to publish to Kafka Topic
         ccmhdr_control_id = ccmhdr.control_id
-        data_feed_dict = {"ID": ccmhdr.id, "CONTROL_ID": ccmhdr.control_id}
+        ccmhdr_id = ccmhdr.id
+        # data_feed_dict = {"ID": ccmhdr.id, "CONTROL_ID": ccmhdr.control_id}
+        data_feed_dict = {"ID": ccmhdr_id, "CONTROL_ID": ccmhdr_control_id}
         logger.debug(f'Data to be submitted to Kafka: ID is {ccmhdr.id} and CONTROL_ID is {ccmhdr.control_id}')
         try:
             db.session.commit()
@@ -98,8 +100,13 @@ class CCMHeader:
                 publish_to_kafka_topic(topic_name=ccmhdr_control_id, data_dict=data_feed_dict)
 
             except Exception as error:
+
                 logger.error("EXCEPTION OCCURRED", exc_info=True)
                 print(type(error), isinstance(error, str), str(error))
+
+                # Also fail the job
+                models.update_header_table(ccmhdr_id, 0, str(error), current_app)
+
                 # Converting into standard ERROR response
                 std_err_resp_dict = dict()  # initialize it
                 std_err_resp_dict = structured_response.StructuredResponse(error, 'GenericException') \
@@ -110,7 +117,10 @@ class CCMHeader:
             # submitted topic and partition ; and start also for other
 
         # Formulating the standard SUCCESS response
-        std_success_resp_dict = structured_response.StructuredResponse(dict(), 'GenericSuccess') \
+        # std_success_resp_dict = structured_response.StructuredResponse(dict(), 'GenericSuccess') \
+        #     .structure_the_success()
+        # Adding add info ID and CONTROL_ID dict here
+        std_success_resp_dict = structured_response.StructuredResponse(data_feed_dict, 'GenericSuccess')\
             .structure_the_success()
 
         print(std_success_resp_dict)

@@ -23,6 +23,12 @@ JOB_HANDLER_THREAD_POLL_FREQUENCY = 40
 # ENGINE_ID identifier will be helpful. As far as the IDs are uniquely identifiable any name can be provided to 'em.
 ENGINE_ID = 'EINSTEIN'
 
+# The host ip the service will be visible as running on, 0.0.0.0 ensures the service running on all IPs of the server
+# where the service is deployed.
+HOST_IP = '0.0.0.0'
+# Ports 49152-65535
+PORT = '50008'
+
 '''All Configurations here DB as well as Logging based on the environment'''
 
 
@@ -74,6 +80,11 @@ class Config(object):
     # you can also enable the query recording by setting the 'SQLALCHEMY_RECORD_QUERIES'
     # config variable to True. This is automatically enabled if Flask is in testing mode.
     SQLALCHEMY_RECORD_QUERIES = True
+
+    # This oracle client path to the oracle instant client only works for windows server.
+    # If the application is installed on Linux then the instant client need to be INSTALLED on the machine,
+    # and as in windows simply unzipping the zipped archive of instant client
+    # does not work on Linux.(verified on Oracle Linux 7). For Linux it should be installed.
     ORACLE_CLIENT_PATH = r"C:\ORACLEINSTANTCLIENT\instantclient_19_10"
 
     # This has to be default path to provide log config details,in absence of an override in APP,this should prevail.
@@ -121,6 +132,8 @@ class Config(object):
                         "&authMechanism=SCRAM-SHA-256&readPreference=primary"\
                         "&appname=GLT_BCM_AIUENGINE&ssl=false"
 
+    # This is the EBCP Call Back URL to post the status of the JOB.
+    EBCP_CALL_BACK_URL = 'http://127.0.0.1:5001/test'
 
 class ProductionConfig(Config):
     DEBUG = False

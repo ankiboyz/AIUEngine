@@ -13,6 +13,7 @@ kafka-python = "*"
 pandas = "*"
 flask = "==1.1.2"
 pymongo = "*"
+requests = "*"
 
 [requires]
 python_version = "3.6"

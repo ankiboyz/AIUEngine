@@ -40,24 +40,38 @@ class StructuredResponse:
         # covering for all currently therefore included 'GenericException' also here. Later on based on other types to
         # be accommodated, it can be put in other if condition
         if self.resp_type == 'SQLAlchemyException':
-            error_dict["status"] = 'ERROR'
+            # error_dict["status"] = 'ERROR'
+            error_dict["status"] = 'FAILURE'
             # orig contains the original description of the error - actually it contains the object itself; so need to
             # stringify else it wont be possible to serialize it.
             error_dict["status_comments"] = str(self.resp_object.__dict__.get("orig", "orig key not found") )
 
             # error_dict["error_object_gathered"] = str(self.error_object.__dict__)  # put in the entire object gathered
-            error_dict["detail_section"] = 'type of error object is ' + str(type(self.resp_object)) + '.  '  \
-                                           + str(self.resp_object.__dict__)  # put in the entire object gathered
+            if not isinstance(self.resp_object, dict):  # detail section to be a dict always
+                error_dict["detail_section"] = {'DETAILS': 'type of error object is ' + str(type(self.resp_object))
+                                                + '.  '
+                                                + str(self.resp_object.__dict__)}  # put in the entire object gathered
+            else:   # if its a dict
+                error_dict["detail_section"] = str(self.resp_object)
 
         if self.resp_type == 'GenericException':  # basically here it seems the exceptions are simple strings
-            error_dict["status"] = 'ERROR'
+            # error_dict["status"] = 'ERROR'
+            error_dict["status"] = 'FAILURE'
             # orig contains the original description of the error - actually it contains the object itself; so need to
             # stringify else it wont be possible to serialize it.
             error_dict["status_comments"] = str(self.resp_object)
 
             # error_dict["error_object_gathered"] = str(self.error_object.__dict__)  # put in the entire object gathered
-            error_dict["detail_section"] = 'type of error object is ' + str(type(self.resp_object)) + '.  ' \
-                                           + str(self.resp_object)  # put in the entire object gathered
+            # error_dict["detail_section"] = 'type of error object is ' + str(type(self.resp_object)) + '.  ' \
+            #                                + str(self.resp_object)  # put in the entire object gathered
+
+            if not isinstance(self.resp_object, dict):  # detail section to be a dict always
+                error_dict["detail_section"] = {'DETAILS': 'type of error object is ' + str(type(self.resp_object))
+                                                           + '.  '
+                                                           + str(self.resp_object.__dict__)}  # put in the entire object gathered
+            else:  # if its a dict
+                error_dict["detail_section"] = str(self.resp_object)
+
         return error_dict
 
     def structure_the_success(self):
@@ -65,7 +79,7 @@ class StructuredResponse:
 
         if self.resp_type == 'GenericSuccess':
             success_dict["status"] = 'SUCCESS'
-            success_dict["status_comments"] = 'This has been successfully executed'
+            success_dict["status_comments"] = 'This has been successfully submitted! :)'
             success_dict["detail_section"] = str(self.resp_object)  # object passed is a dict itself so no __dict__
 
         return success_dict

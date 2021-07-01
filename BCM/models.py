@@ -63,6 +63,7 @@ class BCMMonitorHDR(db.Model):
 
     id = db.Column(db.BigInteger, primary_key=True)
     control_id = db.Column(db.String(50), nullable=False)
+    run_id = db.Column(db.String(500), nullable=True)
     operation_type = db.Column(db.String(50), nullable=True)
     parameters = db.Column(db.Text, nullable=True)
     start_date = db.Column(db.DateTime, nullable=False)
@@ -209,20 +210,22 @@ def consumer_status_update_per_control_engine(topic_id, row_status, appln):
                 db.session.commit()
                 print(f' row modified is {row}')
 
+
 def select_from_CCMMonitorHDR(id, appln):
     ''' This method will select the values for the row for the specific ID value'''
-    with appln.app_context():
-        with db.session():
-            bcm_monitor_hdr = BCMMonitorHDR()
-            # used .all() However, ID is primary key, hence only row is supposed to be emitted.
-            db_row = bcm_monitor_hdr.query.filter_by(id=id).all()
+    # with appln.app_context(): # commenting as appln context shud not be
+    # destroyed as might have to be needed downstream
+    with db.session():
+        bcm_monitor_hdr = BCMMonitorHDR()
+        # used .all() However, ID is primary key, hence only row is supposed to be emitted.
+        db_row = bcm_monitor_hdr.query.filter_by(id=id).all()
 
-            print(f'db_row', type(db_row), type(db_row[0]), db_row, db_row[0].parameters, type(db_row[0].parameters)) # emitted object is list of row objects
-            # db_row <class 'list'> < class 'BCM.models.BCMMonitorHDR' >
-            # [< BCMMonitorHDR 56 >]
-            # {"RUN_ID": "1b90f9d5-094d-4816-a8a8-8ddf04247486-1622726323002", "CONTROL_ID": "TFA02_IFA19_1"
-            # , "EXCEPTION_COLLECTION_NAME": "EXCEPTION_TFA02_IFA19_1", "FUNCTION_ID": "TFA02_COPY"}
-            # <class 'str'>
+        print(f'db_row', type(db_row), type(db_row[0]), db_row, db_row[0].parameters, type(db_row[0].parameters)) # emitted object is list of row objects
+        # db_row <class 'list'> < class 'BCM.models.BCMMonitorHDR' >
+        # [< BCMMonitorHDR 56 >]
+        # {"RUN_ID": "1b90f9d5-094d-4816-a8a8-8ddf04247486-1622726323002", "CONTROL_ID": "TFA02_IFA19_1"
+        # , "EXCEPTION_COLLECTION_NAME": "EXCEPTION_TFA02_IFA19_1", "FUNCTION_ID": "TFA02_COPY"}
+        # <class 'str'>
     return db_row
 
 def insert_into_detail_table(header_id, step_name, appln):
@@ -325,12 +328,14 @@ def update_detail_table(job_detail_id, status, comments, appln):
             logger.debug(f'committing to the DB for the job detail id {job_detail_id}', db.session.dirty, db.session.new)
             db.session.commit()
             # Once the detail updated , updating the Header ID as well.
-            if status == 0:
+            # if status == 0:
+            # !! Change to the logic NOw ,even if it is failure or Success update the Header that flags completion.
                 # Only to be called if there is a Failure, since the header is dependent
                 # on multiple child so if this pipeline_execution passes but the ack to ebcp does not pass
                 # still the main job header is in fail state as it needs to be retried.
                 # and also comments will be pertaining to the one that failed the job.
-                update_header_table(job_header_id, 0, comments, appln)
+                # update_header_table(job_header_id, 0, comments, appln)
+            update_header_table(job_header_id, status, comments, appln)
 
         except Exception as error:
             db.session.rollback()
@@ -339,7 +344,10 @@ def update_detail_table(job_detail_id, status, comments, appln):
 
 
 def update_header_table(job_header_id, status, comments, appln):
-    ''' This is the method to update the header table with the final status'''
+    ''' This is the method to update the header table with the final status.
+        Status value as 0 for FAILURE
+        Status value as 1 for SUCCESS
+    '''
 
     with db.session():
 

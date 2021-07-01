@@ -37,7 +37,10 @@ Refer this: [https://cx-oracle.readthedocs.io/en/latest/user_guide/installation.
 It can be downloaded from the links mentioned in the above document eg for 32-bit it is:
 [https://www.oracle.com/database/technologies/instant-client/microsoft-windows-32-downloads.html][Link to 32 bit Oracle Instant Client]
 
-
+If the APP is running on Windows Server then path to the unzipped archive of instant client would also work,
+the path need to be filled up in config.py ORACLE_CLIENT_PATH variable.
+But for Linux (verified for Oracle Linux 7), the instant client need to be installed on that system;
+and simply providing path do not yield any help.
 
 [Link to cx_Oracle Installation]: https://cx-oracle.readthedocs.io/en/latest/user_guide/installation.html
 [Link to 32 bit Oracle Instant Client]: https://www.oracle.com/database/technologies/instant-client/microsoft-windows-32-downloads.html
