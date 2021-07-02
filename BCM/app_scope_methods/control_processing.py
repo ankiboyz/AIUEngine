@@ -14,6 +14,7 @@ import BCM.models as models
 from commons.structured_response import StageOutputResponseDict as stage_response_dict_class
 import traceback
 from flask import current_app
+import commons.external_app_specifics.ebcp_handshakes as ebcp_handshakes
 
 logger = logging.getLogger(__name__)
 
@@ -683,10 +684,14 @@ class ControlLifecycleFlowchart:
                     if self.flag_error:
                         # Here, we need to mark the job in DB.
                         # 0 - Failure / 1 - Success
+                        # just in case there is an exception here , write the info first to python's sqlite db , which will be read and
+                        # updated by another job, which is local to the engine.
                         models.update_detail_table(self.control_params_dict['JOB_DETAIL_ID']
                                                    , 0     # denotes Failure
                                                    , list(reversed(self.response_list)) # sending the reversed list to be printed in clob column; error shows first
                                                    , self.appln)
+
+                        ebcp_handshakes.status_sync_with_ebcp(self.control_params_dict['ID'], 0, self.response_list, self.appln)
 
                         logger.info(f'The job with ID is marked as FAILURE for the pipeline execution '
                                     f'for the control {self.control_id} with input params as '
@@ -696,6 +701,9 @@ class ControlLifecycleFlowchart:
                                                    , 1  # denotes Success
                                                    , list(reversed(self.response_list))   # sending the reversed list to be printed in clob column ,here, we will pass the entire formulated response dict that's been created here.
                                                    , self.appln)
+
+                        ebcp_handshakes.status_sync_with_ebcp(self.control_params_dict['ID'], 1, self.response_list,
+                                                              self.appln)
 
                     # Error in the closing procedures will not account for the job's status as all the work related to job
                     # has been accomplished.

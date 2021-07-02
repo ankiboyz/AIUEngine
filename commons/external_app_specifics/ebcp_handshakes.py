@@ -20,16 +20,50 @@ def status_sync_with_ebcp(job_hdr_id, status, response_list, appln ):
     # \"CONTROL_ID\":\"TFA02_IFA19_1\",
     # \"EXCEPTION_COLLECTION_NAME\": \"EXCEPTION_TFA02_IFA19_1\",
     # \"FUNCTION_ID\": \"TFA02_COPY\"}"
+
+    # we will select the data, that is to be sent back, from the JOB HEADER table.
     op_row = models.select_from_CCMMonitorHDR(job_hdr_id, appln)
     list_of_params_dict = json.loads(op_row[0].parameters)  # taking the PARAMETERS column value from Job Header table.
+    id = op_row[0].id
     run_id = op_row[0].run_id
     control_id_list = list_of_params_dict.get('CONTROL_ID_LIST', '')
     function_id = list_of_params_dict.get('FUNCTION_ID', '')
+    comments = op_row[0].comments
+
+    comments_truncated = comments[0:150]        # sending first 150 characters.
+
+    print('call back response_dict comments', comments)
+    print('call back response_dict response_list', response_list)
 
     # create response dict and pass it to the method
     # reponse_dict
+    response_dict = dict()
+    response_dict['RUN_ID'] = run_id
+    response_dict['CONTROL_ID_LIST'] = control_id_list
+    response_dict['FUNCTION_ID'] = function_id
+    response_dict['ID'] = id
+    response_dict['ADDINTIONAL_INFO'] = comments_truncated
     # based on status call either success or Failure message
-    # std_err_resp_dict = structured_response.StructuredResponse(reponse_dict, 'GenericException') \
+    # std_err_resp_dict = structured_response.StructuredResponse(response_dict, 'GenericException') \
     #     .structure_the_error()
+
+    if status == 1:     # denotes SUCCESS
+        # pass in the response dict
+        structured_response_dict = structured_response.StructuredResponse(response_dict, 'GenericSuccess')\
+            .structure_the_success()
+
+    if status == 0:     # denotes FAILURE
+        # pass in the response dict
+        structured_response_dict = structured_response.StructuredResponse(response_dict, 'GenericException')\
+            .structure_the_error()
+
+    data_to_be_posted = str(structured_response_dict)
+    try:
+        response = requests.post(ebcp_call_back_url, data_to_be_posted)
+    except Exception as error:
+        logger.error(f'Error encountered while making a call back for the ID {id} and error is {error}', exc_info=True)
+
+    print('response from ebcp call back', response)
+    logger.info(f'Response from EBCP Call back {response} for ID {id}')
 
 
