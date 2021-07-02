@@ -29,6 +29,12 @@ HOST_IP = '0.0.0.0'
 # Ports 49152-65535
 PORT = '50008'
 
+# This determine which set of the configurations as defined below per class will be taken up.
+# for dev keep it as 'config.DevelopmentConfig'
+# for prod keep it as 'config.ProductionConfig'
+APP_CONFIG_MODE = 'config.ProductionConfig'
+
+
 '''All Configurations here DB as well as Logging based on the environment'''
 
 
@@ -99,7 +105,7 @@ class Config(object):
 
     # This setting would determine whether the message will be submitted to Kafka (if yes), else the processing will
     # proceed by spawning new threads whenever the call arrives. Value is True/ False (BEWARE: boolean values in
-    # Python is case sensitive ).
+    # Python is case sensitive . correct values with right case are True / False).
     # Temp-comm: need to code in for newer thread spawning code.
     WHETHER_SUBMIT_TO_KAFKA = True
     # This setting defines the maximum number of consumers to be spawned at one time.
@@ -135,8 +141,11 @@ class Config(object):
     # This is the EBCP Call Back URL to post the status of the JOB.
     EBCP_CALL_BACK_URL = 'http://127.0.0.1:5001/test'
 
+
 class ProductionConfig(Config):
     DEBUG = False
+    SQLALCHEMY_DATABASE_URI = 'oracle://REALIZATION:green123@192.168.2.217:2020/IRMRTA'
+    KAFKA_BROKER_URLS = ['192.168.2.239:9092', ]
 
 
 class DevelopmentConfig(Config):
