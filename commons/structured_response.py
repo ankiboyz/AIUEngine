@@ -52,7 +52,8 @@ class StructuredResponse:
                                                 + '.  '
                                                 + str(self.resp_object.__dict__)}  # put in the entire object gathered
             else:   # if its a dict
-                error_dict["detail_section"] = str(self.resp_object)
+                # error_dict["detail_section"] = str(self.resp_object) # Newly Fixed -- needed an object at EBCP side
+                error_dict["detail_section"] = self.resp_object
 
         if self.resp_type == 'GenericException':  # basically here it seems the exceptions are simple strings
             # error_dict["status"] = 'ERROR'
@@ -70,7 +71,8 @@ class StructuredResponse:
                                                            + '.  '
                                                            + str(self.resp_object.__dict__)}  # put in the entire object gathered
             else:  # if its a dict
-                error_dict["detail_section"] = str(self.resp_object)
+                # error_dict["detail_section"] = str(self.resp_object)  # Newly Fixed -- needed an object at EBCP side
+                error_dict["detail_section"] = self.resp_object
 
         return error_dict
 
@@ -80,7 +82,8 @@ class StructuredResponse:
         if self.resp_type == 'GenericSuccess':
             success_dict["status"] = 'SUCCESS'
             success_dict["status_comments"] = 'This has been successfully submitted! :)'
-            success_dict["detail_section"] = str(self.resp_object)  # object passed is a dict itself so no __dict__
+            # success_dict["detail_section"] = str(self.resp_object)  # object passed is a dict itself so no __dict__
+            success_dict["detail_section"] = self.resp_object   # as needed by EBCP
 
         return success_dict
 

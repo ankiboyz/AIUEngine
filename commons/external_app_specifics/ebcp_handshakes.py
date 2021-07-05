@@ -57,9 +57,30 @@ def status_sync_with_ebcp(job_hdr_id, status, response_list, appln ):
         structured_response_dict = structured_response.StructuredResponse(response_dict, 'GenericException')\
             .structure_the_error()
 
+    verify = appln.config.get('EBCP_VERIFY_CERT', False)
+
+    certificate_path = appln.config.get('EBCP_PATH_TO_CERT', 'PATH_TO_CERT_NOT_SPECIFIED')
+    certificate_key_path = appln.config.get('EBCP_PATH_TO_CERT_KEY', 'PATH_TO_CERT_KEY_NOT_SPECIFIED')
+
+    logger.debug(f'Path to the certificate for EBCP Call Back {certificate_path}')
+    logger.debug(f'Path to the certificate for EBCP Call Back {certificate_key_path}')
+
     data_to_be_posted = str(structured_response_dict)
     try:
-        response = requests.post(ebcp_call_back_url, data_to_be_posted)
+        if not verify:
+            response = requests.post(ebcp_call_back_url, data_to_be_posted, verify=False)       # verify False added for https ignoring.
+        else:
+            response = requests.post(ebcp_call_back_url, data_to_be_posted,
+                                     cert=(certificate_path, certificate_key_path))       # verify False added for https ignoring.
+            # response = requests.post(ebcp_call_back_url, data_to_be_posted,
+            #                          verify=certificate_path)
+
+            # response = requests.post(ebcp_call_back_url, data_to_be_posted,
+            #                          cert=("C:\\Users\\ASaxena\\PycharmProjects\\AIUEngine\\commons\\external_app_specifics\\HTTPSCertificates\\example.crt"
+            #                                , "C:\\Users\\ASaxena\\PycharmProjects\\AIUEngine\\commons\\external_app_specifics\\HTTPSCertificates\\example.key"))
+
+
+
     except Exception as error:
         logger.error(f'Error encountered while making a call back for the ID {id} and error is {error}', exc_info=True)
 

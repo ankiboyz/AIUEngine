@@ -61,7 +61,7 @@ class Config(object):
 
     # This is the maximum limit of the records to be processed in one iteration in MONGO for a control.
     # This is maintained in the control metadata now.
-    LIMIT_FOR_RECS_PROCESSING_IN_ONE_ITERATION = 10
+    # LIMIT_FOR_RECS_PROCESSING_IN_ONE_ITERATION = 10
 
     # Out of the list of controls (as specified in LIST_OF_CONTROLS) below lists which all controls need to have
     # multiprocessing mode i.e. wherein the control processing would require CPU of engine to do some intermediary
@@ -139,13 +139,27 @@ class Config(object):
                         "&appname=GLT_BCM_AIUENGINE&ssl=false"
 
     # This is the EBCP Call Back URL to post the status of the JOB.
-    EBCP_CALL_BACK_URL = 'http://127.0.0.1:5001/test'
+    # EBCP_CALL_BACK_URL = 'http://127.0.0.1:5001/test'
+    EBCP_CALL_BACK_URL = 'https://10.0.2.214:7073/ebcpplatform/exceptionGenerator/acknowledgeBCMExceptionGeneration'
+    # if True then the authentic certificate to be present under the folder commons/external_app_specifics/HTTPSCertificates
+    # if False certificate verification is by passed.
+    EBCP_VERIFY_CERT = True
 
+    # this is the path to the cert and key file of EBCP , inclusive of the filename.
+    EBCP_PATH_TO_CERT = "C:\\Users\\ASaxena\\PycharmProjects\\AIUEngine\\commons\\external_app_specifics\\HTTPSCertificates\\example.crt"
+    EBCP_PATH_TO_CERT_KEY = "C:\\Users\\ASaxena\\PycharmProjects\\AIUEngine\\commons\\external_app_specifics\\HTTPSCertificates\\example.key"
 
 class ProductionConfig(Config):
     DEBUG = False
-    SQLALCHEMY_DATABASE_URI = 'oracle://REALIZATION:green123@192.168.2.217:2020/IRMRTA'
+    # SQLALCHEMY_DATABASE_URI = 'oracle://REALIZATION:green123@192.168.2.217:2020/IRMRTA'
+    SQLALCHEMY_DATABASE_URI = 'oracle://IRM_TM_DEV:green123@sapsr3db.c6djbyal1avz.us-west-2.rds.amazonaws.com:1521/RCMDB'
     KAFKA_BROKER_URLS = ['192.168.2.239:9092', ]
+    EBCP_CALL_BACK_URL = 'https://10.0.2.214:7073/ebcpplatform/exceptionGenerator/acknowledgeBCMExceptionGeneration'
+    EBCP_VERIFY_CERT = False
+    MONGO_DB_CONN_URI = "mongodb://ankur:green123@10.0.2.184:27017/PHILIPS_BCM" \
+                        "?authSource=PHILIPS_BCM" \
+                        "&authMechanism=SCRAM-SHA-256&readPreference=primary" \
+                        "&appname=GLT_BCM_AIUENGINE&ssl=false"
 
 
 class DevelopmentConfig(Config):
