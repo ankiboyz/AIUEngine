@@ -16,7 +16,7 @@ the caller.
 8. Put string quotes before and after string values those will be resolved after f-string conversion eg as "{run_id}", "{function_id}"
 9. Do not put any comments in the pipeline.
 10. Include the pipeline code as mentioned here between [].
-11. The value of the pipeline variable here eg AG_PIPELINE_TFA02_IFA19_1_3 is enclosed within single quotes '' as mentioned below.
+11. The value of the pipeline variable here eg AG_PIPELINE_TFA02_IFA19_1_3 is enclosed within single quotes '' as shown below.
 '''
 
 AG_PIPELINE_TFA02_IFA19_1_3 = '[{{"$match": {{"runID": {{"$eq": "{run_id}" }}\
@@ -74,3 +74,43 @@ AG_PIPELINE_TFA02_IFA19_1_4 = '[{{"$match": {{"runID": {{"$eq": "{run_id}"}},\
                                           , "whenNotMatched": "insert" }} \
                               }}\
                               ]'
+
+AG_PIPELINE_TFA02_IFA19_SC7_1_3 = '[{{"$match": {{"runID": {{"$eq": "{run_id}" }}\
+                                                                 ,"GLT_is_this_realized": {{"$ne": "DONE"}} \
+                                                                }}\
+                                                     }},\
+                              {{"$limit": {limit_for_recs_processing_in_one_iteration}}}\
+                             ,{{"$addFields" : {{"GLT_lastUpdatedDateTime": datetime.datetime.utcnow()\
+                                             , "GLT_is_this_realized": "IN-PROCESS"	\
+                                              }}\
+                              }}\
+                             ,{{"$merge" : {{ "into": "{function_id}"\
+                                          , "on": "_id" \
+                                          , "whenMatched":[ \
+                                                         {{"$addFields":\
+                                                                    {{"GLT_lastUpdatedDateTime": "$$new.GLT_lastUpdatedDateTime"\
+                                                                    ,"GLT_is_this_realized": "$$new.GLT_is_this_realized"\
+                                                                    }}\
+                                                         }}\
+                                                        ]\
+                                          , "whenNotMatched": "discard" }} \
+                              }},\
+                              ]'
+
+AG_PIPELINE_TFA02_IFA19_SC7_1_4 = '[{{"$match": {{"runID": {{"$eq": "{run_id}"}},\
+									 "GLT_is_this_realized": "IN-PROCESS"}}}}\
+						            ,{{"$project": {{"_id": 0, "GLT_is_this_realized": 0}}}}\
+                                    ,{{"$addFields" : {{\
+                                                       "status": "Unassigned"\
+                                                     , "control_id": "{control_id}" \
+                                                     , "GLT_history_runID" : {{"$concatArrays":[[{{"runID": "$runID", "GLT_lastUpdatedDateTime": "$GLT_lastUpdatedDateTime"}}],{{"$cond":{{"if":{{"$eq":[{{"$ifNull":["$GLT_history_runID",""]}}, ""]}}, "then":[], "else":"$GLT_history_runID"}}}}]}}\
+                                                     , "exceptionID" : ""\
+                                                     , "reason_code": ""\
+                                                     }}\
+                                      }}\
+						            ,{{"$merge" : {{ "into": "{exception_collection_name}"\
+									  , "on": "COMPOSITEKEY"\
+									  , "whenMatched":  "keepExisting"\
+									  , "whenNotMatched": "insert" }}\
+						             }}\
+						           ]'

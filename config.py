@@ -33,7 +33,7 @@ PORT = '50008'
 # for dev keep it as 'config.DevelopmentConfig'
 # for prod keep it as 'config.ProductionConfig'
 # For current testing keeping it as 'config.TestingConfig'
-APP_CONFIG_MODE = 'config.TestingConfig'
+APP_CONFIG_MODE = 'config.DevelopmentConfig'
 
 
 '''All Configurations here DB as well as Logging based on the environment'''
@@ -58,7 +58,7 @@ class Config(object):
     # list of controls to be undertaken by this APP.
     # WORD OF CAUTION: Kindly ensure the list of controls entered are all Unique!
     # At every restart of the APP the list of controls is inserted into the DB for the specific EngineID
-    LIST_OF_CONTROLS = ['PAY05', 'TFA02_IFA19_1', 'TFA02_IFA19_SC7', 'TRE07', 'TFA02_IFA19_1']
+    LIST_OF_CONTROLS = ['PAY05', 'TFA02_IFA19_1', 'TFA02_IFA19_SC7_1', 'TRE07_1', 'TFA02_IFA19_1']
 
     # This is the maximum limit of the records to be processed in one iteration in MONGO for a control.
     # This is maintained in the control metadata now.
@@ -140,8 +140,8 @@ class Config(object):
                         "&appname=GLT_BCM_AIUENGINE&ssl=false"
 
     # This is the EBCP Call Back URL to post the status of the JOB.
-    # EBCP_CALL_BACK_URL = 'http://127.0.0.1:5001/test'
-    EBCP_CALL_BACK_URL = 'https://10.0.2.214:7073/ebcpplatform/exceptionGenerator/acknowledgeBCMExceptionGeneration'
+    EBCP_CALL_BACK_URL = 'http://127.0.0.1:5001/test'
+    # EBCP_CALL_BACK_URL = 'https://10.0.2.214:7073/ebcpplatform/exceptionGenerator/acknowledgeBCMExceptionGeneration'
     # if True then the authentic certificate to be present under the folder commons/external_app_specifics/HTTPSCertificates
     # if False certificate verification is by passed.
     EBCP_VERIFY_CERT = True

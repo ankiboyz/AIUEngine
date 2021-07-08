@@ -27,49 +27,22 @@ IndexKeys = typing.NamedTuple('IndexKeys', [('KEY_COMPONENT', list), ('COLLECTIO
 
 GLOBAL_CONTROLS_METADATA = {'LIMIT_FOR_RECS_PROCESSING_IN_ONE_ITERATION': 1000}
 
-# SPECIFIC_CONTROLS_METADATA = {
-#                     'TFA02_IFA19_1': {'LIMIT_OF_RECS_PROCESSED': 10,
-#                                       # This is a tuple - first tuple being list of tuples
-#                                       'INDEXES': {'KEY1': {
-#                                                          'KEY_COMPONENT': [("COMPOSITEKEY", 'ASCENDING')]
-#                                                          , 'FUNCTION_COLLECTION': 'TFA02'
-#                                                          , 'KWARGS': {'unique': True, 'name': 'GLT_BCM_COMPOSITEKEY'}
-#                                                           },
-#                                                   'KEY2': {
-#                                                          'KEY_COMPONENT': [("runID", 'ASCENDING')]
-#                                                          , 'FUNCTION_COLLECTION': 'TFA02'
-#                                                          , 'KWARGS': {'unique': False, 'name': 'GLT_BCM_runID'}
-#                                                           },
-#                                                   'KEY3': {
-#                                                          'KEY_COMPONENT': [("exceptionID", 'ASCENDING')]
-#                                                          , 'FUNCTION_COLLECTION': 'TFA02'
-#                                                          , 'KWARGS': {'unique': False, 'name': 'GLT_BCM_exceptionID'}
-#                                                           }
-#                                                   }
-#
-#
-#                                       },
-#                     'TRE07': {'LIMIT_OF_RECS_PROCESSED': 10,
-#                                       # This is a tuple - first tuple being list of tuples
-#                                       'INDEXES': {'KEY1': {
-#                                                          'KEY_COMPONENT': [("COMPOSITEKEY", 'ASCENDING')],
-#                                                          'KWARGS': {'unique': True, 'name': 'GLT_BCM_COMPOSITE_KEY'}
-#                                                           }
-#                                                   }
-#
-#
-#                                       }
-#
-#                     }
 SPECIFIC_CONTROLS_METADATA = {
-                    'TFA02_IFA19_1': {#'LIMIT_FOR_RECS_PROCESSING_IN_ONE_ITERATION': 13,
+                    'TFA02_IFA19_1': {# 'LIMIT_FOR_RECS_PROCESSING_IN_ONE_ITERATION': 13,
                                       # This is a tuple - first tuple being list of tuples
                                       'INDEXES': {'KEY1': IndexKeys([("COMPOSITEKEY", pymongo.ASCENDING)], 'EXCEPTION_TFA02_IFA19_1', {'unique': True, 'name': 'GLT_BCM_COMPOSITEKEY'})
                                                   , 'KEY2': IndexKeys([("runID", pymongo.ASCENDING)], 'EXCEPTION_TFA02_IFA19_1', {'unique': False, 'name': 'GLT_BCM_runID'})
                                                   , 'KEY3': IndexKeys([("exceptionID", pymongo.ASCENDING)], 'EXCEPTION_TFA02_IFA19_1', {'unique': False, 'name': 'GLT_BCM_exceptionID'})}
                                       },
-                    'TRE07_1': {#'LIMIT_FOR_RECS_PROCESSING_IN_ONE_ITERATION': 10,
+                    'TFA02_IFA19_SC7_1': {# 'LIMIT_FOR_RECS_PROCESSING_IN_ONE_ITERATION': 13,
+                                          # This is a tuple - first tuple being list of tuples
+                                          'INDEXES': {'KEY1': IndexKeys([("COMPOSITEKEY", pymongo.ASCENDING)], 'EXCEPTION_TFA02_IFA19_SC7_1', {'unique': True, 'name': 'GLT_BCM_COMPOSITEKEY'})
+                                                      , 'KEY2': IndexKeys([("runID", pymongo.ASCENDING)], 'EXCEPTION_TFA02_IFA19_SC7_1', {'unique': False, 'name': 'GLT_BCM_runID'})
+                                                      , 'KEY3': IndexKeys([("exceptionID", pymongo.ASCENDING)], 'EXCEPTION_TFA02_IFA19_SC7_1', {'unique': False, 'name': 'GLT_BCM_exceptionID'})}
+                                          },
+                    'TRE07_1': {  # 'LIMIT_FOR_RECS_PROCESSING_IN_ONE_ITERATION': 10,
                                       # This is a tuple - first tuple being list of tuples
                                       'INDEXES': {'KEY1': IndexKeys([("COMPOSITEKEY", pymongo.ASCENDING)], 'EXCEPTION_TRE07_1', {'unique': True, 'name': 'GLT_BCM_COMPOSITE_KEY'})}
                               }
+
                               }
