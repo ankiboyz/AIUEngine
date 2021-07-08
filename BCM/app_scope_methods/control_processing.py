@@ -244,7 +244,8 @@ class ControlLifecycleFlowchart:
             self.control_params_dict = {**self.control_params_dict, **list_of_params_dict}
 
             # Also add the LIMIT_FOR_RECS_PROCESSING_IN_ONE_ITERATION from the configurations.
-            self.control_params_dict['LIMIT_FOR_RECS_PROCESSING_IN_ONE_ITERATION'] = current_app.config['LIMIT_FOR_RECS_PROCESSING_IN_ONE_ITERATION']
+            # This is now the part of the Global controls metadata.
+            # self.control_params_dict['LIMIT_FOR_RECS_PROCESSING_IN_ONE_ITERATION'] = current_app.config['LIMIT_FOR_RECS_PROCESSING_IN_ONE_ITERATION']
 
             # Here, for the control take specifics from the control_metadata
             global_settings_for_all_controls_dict = control_metadata.GLOBAL_CONTROLS_METADATA

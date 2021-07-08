@@ -32,7 +32,8 @@ PORT = '50008'
 # This determine which set of the configurations as defined below per class will be taken up.
 # for dev keep it as 'config.DevelopmentConfig'
 # for prod keep it as 'config.ProductionConfig'
-APP_CONFIG_MODE = 'config.ProductionConfig'
+# For current testing keeping it as 'config.TestingConfig'
+APP_CONFIG_MODE = 'config.TestingConfig'
 
 
 '''All Configurations here DB as well as Logging based on the environment'''
@@ -175,4 +176,15 @@ class StagingConfig(Config):
 
 class TestingConfig(Config):
     TESTING = True
+    SQLALCHEMY_DATABASE_URI = 'oracle://EBCPQA4:green123@192.168.2.240:2020/EBCPQA'
+    KAFKA_BROKER_URLS = ['192.168.2.239:9092', ]
+    EBCP_CALL_BACK_URL = 'http://192.168.2.44:7080/ebcpplatform/exceptionGenerator/acknowledgeBCMExceptionGeneration'
+    EBCP_VERIFY_CERT = False
+
+    MONGO_DB_CONN_URI = "mongodb://gluser:green123@192.168.2.44:27017/GLT_AVM_HENKEL_QA" \
+                        "?authSource=GLT_AVM_HENKEL_QA" \
+                        "&authMechanism=SCRAM-SHA-1&readPreference=primary" \
+                        "&appname=GLT_BCM_AIUENGINE&ssl=false"
+
+
 
