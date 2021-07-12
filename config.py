@@ -33,7 +33,7 @@ PORT = '50008'
 # for dev keep it as 'config.DevelopmentConfig'
 # for prod keep it as 'config.ProductionConfig'
 # For current testing keeping it as 'config.TestingConfig'
-APP_CONFIG_MODE = 'config.DevelopmentConfig'
+APP_CONFIG_MODE = 'config.TestingConfig'
 
 
 '''All Configurations here DB as well as Logging based on the environment'''
@@ -172,6 +172,8 @@ class DevelopmentConfig(Config):
 class StagingConfig(Config):
     DEVELOPMENT = True
     DEBUG = True
+    KAFKA_BROKER_URLS = ['192.168.2.239:9092', ]
+    MAX_NUM_OF_CONSUMERS_AT_ONE_TIME = 3
 
 
 class TestingConfig(Config):
@@ -181,7 +183,7 @@ class TestingConfig(Config):
     EBCP_CALL_BACK_URL = 'http://192.168.2.44:7080/ebcpplatform/exceptionGenerator/acknowledgeBCMExceptionGeneration'
     EBCP_VERIFY_CERT = False
 
-    MONGO_DB_CONN_URI = "mongodb://gluser:green123@192.168.2.44:27017/GLT_AVM_HENKEL_QA" \
+    MONGO_DB_CONN_URI = "mongodb://gluser:green123@10.0.2.184:27017/GLT_AVM_HENKEL_QA" \
                         "?authSource=GLT_AVM_HENKEL_QA" \
                         "&authMechanism=SCRAM-SHA-1&readPreference=primary" \
                         "&appname=GLT_BCM_AIUENGINE&ssl=false"
