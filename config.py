@@ -33,7 +33,7 @@ PORT = '50008'
 # for dev keep it as 'config.DevelopmentConfig'
 # for prod keep it as 'config.ProductionConfig'
 # For current testing keeping it as 'config.TestingConfig'
-APP_CONFIG_MODE = 'config.TestingConfig'
+APP_CONFIG_MODE = 'config.DevelopmentConfig'
 
 
 '''All Configurations here DB as well as Logging based on the environment'''
@@ -58,7 +58,7 @@ class Config(object):
     # list of controls to be undertaken by this APP.
     # WORD OF CAUTION: Kindly ensure the list of controls entered are all Unique!
     # At every restart of the APP the list of controls is inserted into the DB for the specific EngineID
-    LIST_OF_CONTROLS = ['PAY05', 'TFA02_IFA19_1', 'TFA02_IFA19_SC7_1', 'TRE07_1', 'TFA02_IFA19_1']
+    LIST_OF_CONTROLS = ['PAY05', 'TFA02_IFA19_1', 'TFA02_IFA19_SC7_1', 'TRE07_1', 'TFA02_IFA19_1', 'FIN08_FA_1']
 
     # This is the maximum limit of the records to be processed in one iteration in MONGO for a control.
     # This is maintained in the control metadata now.
@@ -110,7 +110,7 @@ class Config(object):
     # Temp-comm: need to code in for newer thread spawning code.
     WHETHER_SUBMIT_TO_KAFKA = True
     # This setting defines the maximum number of consumers to be spawned at one time.
-    MAX_NUM_OF_CONSUMERS_AT_ONE_TIME = 2
+    MAX_NUM_OF_CONSUMERS_AT_ONE_TIME = 5
 
     # this is the list of bootstrap-servers, currently kafka-python provides to connect via broker urls
     # and not by directly connecting to Zookeeper , which the .sh utilities provide.

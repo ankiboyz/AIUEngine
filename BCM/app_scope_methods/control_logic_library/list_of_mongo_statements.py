@@ -166,3 +166,32 @@ AG_PIPELINE_TRE07_1_4 = '[{{"$match": {{"runID": {{"$eq": "{run_id}"}},\
                                       , "whenNotMatched": "insert" }}\
                           }}\
                           ]'
+
+AG_PIPELINE_FIN08_FA_1_4 = '[{{"$match": {{"runID": {{"$eq": "{run_id}"}},\
+                                           "GLT_is_this_realized": "IN-PROCESS"}}}}\
+                             ,{{"$project": {{"_id": 0, "GLT_is_this_realized": 0}}}}\
+                             ,{{"$addFields" : {{\
+                                                 "status": "Unassigned"\
+                                               , "control_id": "{control_id}"\
+                                               , "GLT_history_runID" : {{"$concatArrays":[[{{"runID": "$runID", "GLT_lastUpdatedDateTime": "$GLT_lastUpdatedDateTime"}}],{{"$cond":{{"if":{{"$eq":[{{"$ifNull":["$GLT_history_runID",""]}}, ""]}}, "then":[], "else":"$GLT_history_runID"}}}}]}}\
+                                               , "exceptionID" : ""\
+                                               , "reason_code": ""\
+                                               , "GLT_do_auto_close": {{"$cond":{{"if":{{"$eq":["$IMDIF", "X"]}}, "then":True, "else":False}}}}\
+                                               , "GLT_do_auto_reopen": False\
+                              }} \
+                             }}\
+                             ,{{"$merge" : {{ "into": "{exception_collection_name}"\
+                                             , "on": "COMPOSITEKEY"\
+                                             , "whenMatched":[ \
+                                                              {{"$addFields":\
+                                                                {{"GLT_lastUpdatedDateTime": "$$new.GLT_lastUpdatedDateTime"\
+                                                                 ,"GLT_do_auto_close":"$$new.GLT_do_auto_close"\
+                                                                 ,"GLT_do_auto_reopen":False\
+                                                                 ,"GLT_history_runID": {{"$concatArrays":["$$new.GLT_history_runID", {{"$cond":{{"if":{{"$eq":[{{"$ifNull":["$GLT_history_runID",""]}}, ""]}}, "then":[], "else":"$GLT_history_runID"}}}}]}}\
+                                                                 ,"exceptionID": {{"$toString": "$_id"}}\
+                                                               }}\
+                                                               }}\
+                                                              ]\
+                                             , "whenNotMatched": "insert" }}\
+                             }}\
+                             ]'
