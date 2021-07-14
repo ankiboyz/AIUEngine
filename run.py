@@ -38,7 +38,8 @@ def create_ccm_app():
     # After the app been configured calling the checks for the Controls and Engine_ID association
     # maintains what all controls are to be handled by the particular application
 
-    controls_per_engine.list_of_controls_per_engine()
+    # THis should be done from within the main only as this method is called intermittently as well to get app and db
+    # controls_per_engine.list_of_controls_per_engine()
 
     # start a job handler thread
     x = threading.Thread(target=thread_function, args=("JOB_HANDLER_THREAD",), daemon=True)
@@ -66,6 +67,12 @@ if __name__ == "__main__":
         cx_Oracle.init_oracle_client()
 
     appln, db = create_ccm_app()    # as it returns the tuple of application and db
+    controls_per_engine.list_of_controls_per_engine()
+
+    # At restart of the engine, put all the PROCESSING status jobs to the FAILURE state.
+    # BCM.models.update_header_table_processing(0,)
+    BCM.models.update_header_table_processing('Seems like stuck messages in PROCESSING state updated to FAILURE on restart', appln)
+
     try:
         # with host="0.0.0.0" argument the up application is run on all IPs of this server
         # and can be reached from the external world.

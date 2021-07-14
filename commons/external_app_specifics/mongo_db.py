@@ -16,6 +16,7 @@ def create_mongo_client(mongodb_uri):
     Input : The URI of the mongo client.
     Output : MongoClient in case of success
              Boolean False in case of an error
+             along with the error ; that is its a tuple.
 
     In case of situation corresponding error was thrown:
     timeout:
@@ -32,20 +33,23 @@ def create_mongo_client(mongodb_uri):
 
     '''
 
-    mc = MongoClient(mongodb_uri)
     mc_or_False = False
+    error_recd = ''
+    mc = MongoClient(mongodb_uri)
 
     try:
         # light weight command used to check for the Client credentials , connectivity etc.
         mc.admin.command('ismaster')
         logger.info('Mongo client is able to Connect')
         mc_or_False = mc
+        error_recd = ''
 
     except Exception as error:
-        logger.error(f'ERROR encountered {error}', exc_info=True)
+        error_recd = error      # in order to take care of unbound local variable a variable need to be assigned within the except block.
+        logger.error(f'ERROR encountered {error_recd}', exc_info=True)
         mc_or_False = False
 
-    return mc_or_False
+    return mc_or_False, error_recd   # Passing as a tuple.
 
 # For testing purposes
 # d = create_mongo_client("mongodb://ankur:green123@192.168.2.193:27018/PHILIPS_BCM"

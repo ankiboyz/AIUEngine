@@ -57,43 +57,34 @@ def delegator(control_id, dict_input):
     # Hence we can now make use of it in forking as well as threading.
 
     application, database = run.create_ccm_app()
+    try:
+        # Here, let's gather the mongo DB connection and pass it to the control execution flowchart.
+        mongo_client, error_recd = mongo_db_conn.create_mongo_client(application.config["MONGO_DB_CONN_URI"])
 
-    # Here, let's gather the mongo DB connection and pass it to the control execution flowchart.
-    mongo_client = mongo_db_conn.create_mongo_client(application.config["MONGO_DB_CONN_URI"])
+        # Here it means that the Mongo Client has been gathered else in case of error it would have returned False
+        if mongo_client:
+            flwchart = ControlLifecycleFlowchart(control_id, application, database, mongo_client, dict_input)
+            flwchart.execute_pipeline()
 
-    # Here it means that the Mongo Client has been gathered else in case of error it would have returned False
-    if mongo_client:
-        flwchart = ControlLifecycleFlowchart(control_id, application, database, mongo_client, dict_input)
-        flwchart.execute_pipeline()
-    else:
-        pass
+        else:
+
+            # Update the Job Header table with the status of FAILURE.
+            # if ID is not found in the dict then do it for 0 th header id which does not exist.
+            logger.error(f'There is an error encountered in getting the mongo db connection {error_recd}')
+
+            job_header_id = dict_input.get('ID', 0)
+            comments = error_recd
+            appln = application
+            models.update_header_table(job_header_id, 0, comments, appln)
+
+    except Exception as error:
+        logger.error(f'There is an error encountered in getting the mongo db connection {error}')
+
+        job_header_id = dict_input.get('ID', 0)
+        comments = error
+        appln = application
+        models.update_header_table(job_header_id, 0, comments, appln)
         # We need to log the job execution and stop it from execution; signal error for the job
-
-
-    # a = {'RUN_ID': 1111, 'CONTROL_ID': "TFA02_IFA19", 'EXCEPTION_COLLECTION_NAME': "EXCEPTION_TFA02_IFA19"
-    #     , 'FUNCTION_ID': "TFA02_IFA19"}
-    # For testing purposes - END
-
-    # code_units_list = control_logic_dict.get(control_id, list())
-    # if len(code_units_list) == 0:
-    #     logger.error(f'NO code units found to be executed for the control {control_id}.. Kindly check the configuration')
-    #
-    # else:
-    #     for item in code_units_list:
-    #         try:
-    #             import importlib
-    #             imprt_module = importlib.import_module(item["path_to_module"])
-    #             func_to_be_called = item["method_name"]
-    #
-    #             logger.info(f' Method {func_to_be_called} called to process the control {control_id}')
-    #             result_frm_func_called = getattr(imprt_module, func_to_be_called)(appln_cntxt, **kwargs)
-    #
-    #         except Exception as error:
-    #             logger.error(f' Error encountered {error}', exc_info=True)
-    #             # make entries into the detail table for the execution trace for that.
-    #             # Fail the job for the ID
-    #             break
-
     return True     # returns just boolean over the execution have been done irrespective of whether it was pass / fail.
 
 
@@ -427,7 +418,7 @@ class ControlLifecycleFlowchart:
             # values of FAILURE, ERROR as status will denote error encountered.
             is_error_encountered = True if result_frm_method_called.get('STATUS', False) not in ['yesID', 'noID', 'SUCCESS'] else False
             if is_error_encountered:
-                self.signal_error(True)     # exit flag is placed in the execute pipeline as checks the error flag there method.
+                self.signal_error(True)  # exit flag is placed in the execute pipeline as checks the error flag there method.
 
             # Boolean and String comparison does not throw an error.
             reason_text = 'SUCCESS' if result_frm_method_called.get('STATUS', False) == 'SUCCESS' else \

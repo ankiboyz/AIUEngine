@@ -20,6 +20,7 @@ from BCM import models
 # from flask_sqlalchemy import SQLAlchemy
 from BCM.app_scope_methods import ccm_sequences
 from commons import structured_response
+from kafka import KafkaConsumer, BrokerConnection
 
 # print('BCM  ', dir(BCM))
 from kafka.admin import KafkaAdminClient, NewTopic
@@ -96,6 +97,20 @@ class CCMHeader:
 
         if current_app.config["WHETHER_SUBMIT_TO_KAFKA"]:
             try:
+                # Before publishing to Kafka also ensure there is a consumer group already present, else with "latest"
+                # offset commit if a consumer group is created afterwards publishing the message the default value of
+                # auto.offset.reset mentions that the consumer group will receive latest messages once the group is up.
+                # That means that if the Consumer Group is unknown to the Broker for your test topic it will only wait for new incoming messages.
+                # Therefore, the messages that was written by your Producer Test beforehand could not be consumed by the TestConsumer.
+
+                # Both topic_id and group_id is equal to control_id.
+                topic_id = ccmhdr_control_id
+                group_id = ccmhdr_control_id
+                consumer = KafkaConsumer(topic_id, bootstrap_servers=current_app.config["KAFKA_BROKER_URLS"]
+                                         , auto_offset_reset=current_app.config["KAFKA_CONSUMER_AUTO_OFFSET_RESET"]
+                                         , enable_auto_commit=current_app.config["KAFKA_CONSUMER_ENABLE_AUTO_COMMIT"]
+                                         , group_id=group_id)
+
                 # Make a call to publish to the Kafka Topic Partition Queue
                 publish_to_kafka_topic(topic_name=ccmhdr_control_id, data_dict=data_feed_dict)
 

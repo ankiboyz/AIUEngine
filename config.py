@@ -109,9 +109,20 @@ class Config(object):
     # Python is case sensitive . correct values with right case are True / False).
     # Temp-comm: need to code in for newer thread spawning code.
     WHETHER_SUBMIT_TO_KAFKA = True
-    # This setting defines the maximum number of consumers to be spawned at one time.
-    MAX_NUM_OF_CONSUMERS_AT_ONE_TIME = 5
 
+    # Below are thread related settings.
+    # This setting defines the maximum number of threads to be spawned at one time if WHETHER_SUBMIT_TO_KAFKA is False.
+    MAX_NUM_OF_THREADS_AT_ONE_TIME = 2
+    # This setting defines the sleep time between polling to find out the next job id to execute within a control id lookout thread.
+    # This is in Milli Seconds.
+    INTRA_THREAD_POLL_FREQUENCY_MS = 5000
+    # This is number of consecutive attempts to get some processing, if not found then gracefully exits to make way for other.
+    INTRA_THREAD_CONSECUTIVE_NO_RECS_TO_SIGNAL_EXIT = 2
+
+
+    # Below are Kafka consumer related settings
+    # This setting defines the maximum number of consumers to be spawned at one time.
+    MAX_NUM_OF_CONSUMERS_AT_ONE_TIME = 4
     # this is the list of bootstrap-servers, currently kafka-python provides to connect via broker urls
     # and not by directly connecting to Zookeeper , which the .sh utilities provide.
     KAFKA_BROKER_URLS = ['localhost:9092', ]
@@ -168,6 +179,8 @@ class DevelopmentConfig(Config):
     DEBUG = True
     SQLALCHEMY_ECHO = True
 
+    WHETHER_SUBMIT_TO_KAFKA = False
+    MAX_NUM_OF_THREADS_AT_ONE_TIME = 1
 
 class StagingConfig(Config):
     DEVELOPMENT = True

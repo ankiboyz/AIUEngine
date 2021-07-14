@@ -66,6 +66,7 @@ def status_sync_with_ebcp(job_hdr_id, status, response_list, appln ):
     logger.debug(f'Path to the certificate for EBCP Call Back {certificate_key_path}')
 
     data_to_be_posted = str(structured_response_dict)
+    response = ''
     try:
         if not verify:
             response = requests.post(ebcp_call_back_url, data_to_be_posted, verify=False)       # verify False added for https ignoring.
@@ -79,12 +80,8 @@ def status_sync_with_ebcp(job_hdr_id, status, response_list, appln ):
             #                          cert=("C:\\Users\\ASaxena\\PycharmProjects\\AIUEngine\\commons\\external_app_specifics\\HTTPSCertificates\\example.crt"
             #                                , "C:\\Users\\ASaxena\\PycharmProjects\\AIUEngine\\commons\\external_app_specifics\\HTTPSCertificates\\example.key"))
 
-
-
     except Exception as error:
         logger.error(f'Error encountered while making a call back for the ID {id} and error is {error}', exc_info=True)
 
     print('response from ebcp call back', response)
     logger.info(f'Response from EBCP Call back {response} for ID {id}')
-
-

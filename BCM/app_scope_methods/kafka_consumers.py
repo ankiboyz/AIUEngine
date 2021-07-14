@@ -42,7 +42,7 @@ def kafka_consumer_algo():
         # Finding the consumers those are UP
         cntrl_monitor_ngn_assoc = models.BCMControlEngineAssoc()
         query_4_consumers_up = cntrl_monitor_ngn_assoc.query.filter_by(status=models.KafkaConsumerEnum.UP
-                                                                      , engine_id=app.config["ENGINE_ID"]).all()
+                                                                       , engine_id=app.config["ENGINE_ID"]).all()
         consumers_that_can_be_awakened = app.config["MAX_NUM_OF_CONSUMERS_AT_ONE_TIME"] - len(query_4_consumers_up)
 
         logger.info(f'Consumers that can be Awakened for this Engine_ID {app.config["ENGINE_ID"]} are '
@@ -233,8 +233,8 @@ def making_consumer_up(topic_id, group_id, appln_cntxt):
 
             # update the status to DOWN for this engine's control_Id
             models.consumer_status_update_per_control_engine(topic_id, 'DOWN', appln_cntxt)
-            print("finally block called for consumer's graceful exit")
-            logger.info(f"Finally block called for consumer's graceful exit {topic_id}")
+            print(f'finally block called for consumer\'s graceful exit {topic_id}')
+            logger.info(f'Finally block called for consumer\'s graceful exit {topic_id}')
             # code shifted to a method
             # with appln_cntxt.app_context():
             #     cntrl_monitor_ngn_assoc = models.CCMControlEngineAssoc()

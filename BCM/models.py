@@ -139,7 +139,7 @@ def sequences_provider(ip_tablename, ip_columnname, ip_batchsize, appln):
     # current_sequence_query = CCMSequences.query.filter_by(table_name='glt_ccm_xtnd_monitor_header', column_name='id')
     logger.info(f'The input parameters for this method are ip_tablename = {ip_tablename}'
                 f', ip_columnname = {ip_columnname} and ip_batchsize = {ip_batchsize}')
-    with appln.app_context():
+    with current_app.app_context():
         current_sequence_query = BCMSequences.query.filter_by(table_name=ip_tablename, column_name=ip_columnname)
         # results_all = current_sequence_query.all()
         results_first = current_sequence_query.first()
@@ -199,7 +199,8 @@ def consumer_status_update_per_control_engine(topic_id, row_status, appln):
                                                                           , engine_id=appln.config["ENGINE_ID"]).all()
 
             for row in db_row_4_status_upd:
-                logger.info(f' Kafka Consumer for topic Id {topic_id} being updated for status, to be set as {row_status}, is  {row.control_id}')
+                logger.info(f' Topic Id {topic_id} being updated for status, to be set as {row_status}, is  {row.control_id}')
+                print(f' Topic Id  {topic_id} being updated for status, to be set as {row_status}, is  {row.control_id}')
 
                 if row_status == 'DOWN':
                     row.status = KafkaConsumerEnum.DOWN  # make it DOWN
@@ -272,15 +273,19 @@ def insert_into_detail_table(header_id, step_name, appln):
         bcm_monitor_dtl.status = StatusEnum.SUBMITTED
         bcm_monitor_dtl.header_id = header_id
         db.session.add(bcm_monitor_dtl)
-
+        bcm_monitor_dtl_id = bcm_monitor_dtl.id
         try:
-            db.session.commit()
+            # update the Header table as well to PROCESSING status
+            update_header_table(header_id, 2, 'Execution Started', appln)
+
+            db.session.commit()     # committing the detail later, ie after header table to take care of duration
             print(f'Committing the entries into the db {bcm_monitor_dtl}')
+
         except Exception as error:
             db.session.rollback()
             logger.error(f' There has been an ERROR while inserting the records in the Details table , error being {error}')
             raise error
-        return bcm_monitor_dtl.id
+        return bcm_monitor_dtl_id       # Here, in the return the .id should not be used.
 
 
 def update_detail_table(job_detail_id, status, comments, appln):
@@ -322,7 +327,7 @@ def update_detail_table(job_detail_id, status, comments, appln):
 
         # We will also mark the header job as failure.
         job_header_id = job_dtl_id_row_2_update.header_id
-        db.session.commit()
+        # db.session.commit()
         try:
             # db.session.merge(job_dtl_id_row_2_update)
             logger.debug(f'committing to the DB for the job detail id {job_detail_id}', db.session.dirty, db.session.new)
@@ -347,70 +352,86 @@ def update_header_table(job_header_id, status, comments, appln):
     ''' This is the method to update the header table with the final status.
         Status value as 0 for FAILURE
         Status value as 1 for SUCCESS
+        Status value as 2 for PROCESSING
     '''
+    with appln.app_context():   # This was needed as else with Mongo Error in delegator this was unable to get an application context.
+        with db.session():
 
-    with db.session():
+            # Here, without making use of app the session execution happened, because the context has been pushed in the
+            # initialization procedure of the pipeline execution.
+            bcm_monitor_hdr = BCMMonitorHDR()
 
-        # Here, without making use of app the session execution happened, because the context has been pushed in the
-        # initialization procedure of the pipeline execution.
-        bcm_monitor_hdr = BCMMonitorHDR()
+            # since its the key only one is constrained to be available.
+            job_hdr_id_row_2_update = bcm_monitor_hdr.query.filter_by(id=job_header_id).first()
+            # since this is first() so this is a row object.
+            print('update_detail_table- query executed', job_hdr_id_row_2_update)
 
-        # since its the key only one is constrained to be available.
-        job_hdr_id_row_2_update = bcm_monitor_hdr.query.filter_by(id=job_header_id).first()
-        # since this is first() so this is a row object.
-        print('update_detail_table- query executed', job_hdr_id_row_2_update)
+            if status == 0:
+                status_enum_value = StatusEnum.FAILURE
+            if status == 1:
+                status_enum_value = StatusEnum.SUCCESS
+            if status == 2:
+                status_enum_value = StatusEnum.PROCESSING
 
-        if status == 0:
-            status_enum_value = StatusEnum.FAILURE
-        if status == 1:
-            status_enum_value = StatusEnum.SUCCESS
+            job_hdr_id_row_2_update.status = status_enum_value
 
-        job_hdr_id_row_2_update.status = status_enum_value
+            # Its important to update updated date after the duration been calculated.
+            # For retrials the creation date could the creation date as of 1 st trial , but we want duration for the
+            # current trial.
+            # job_hdr_id_row_2_update.updated_date = datetime.now()
+            if status == 0 or status == 1:
+                # This to be populated only when the job status has been SUCCESS or FAILURE.
+                job_hdr_id_row_2_update.end_date = datetime.now()
 
-        # Its important to update updated date after the duration been calculated.
-        # For retrials the creation date could the creation date as of 1 st trial , but we want duration for the
-        # current trial.
-        # job_hdr_id_row_2_update.updated_date = datetime.now()
+                # Here for the Header the duration should be between the Updated and End Date.
+                # as job header can be updated for Retrials later upon. End date will be picked up as we have set here in the session.
+                job_hdr_id_row_2_update.duration = (job_hdr_id_row_2_update.end_date - job_hdr_id_row_2_update.updated_date)/timedelta(minutes=1)
+                # job_dtl_id_row_2_update.duration = job_dtl_id_row_2_update.end_date - job_dtl_id_row_2_update.start_date
 
-        job_hdr_id_row_2_update.end_date = datetime.now()
+            job_hdr_id_row_2_update.updated_date = datetime.now()
+            job_hdr_id_row_2_update.comments = str(comments)    # only string values else will error out.
+            # max_run_sequence = 0
+            # print(f'committing to the DB', db.session.dirty, db.session.new)
+            # db.session.commit()
 
-        # Here for the Header the duration should be between the Updated and End Date.
-        # as job header can be updated for Retrials later upon. End date will be picked up as we have set here in the session.
-        job_hdr_id_row_2_update.duration = (job_hdr_id_row_2_update.end_date - job_hdr_id_row_2_update.updated_date)/timedelta(minutes=1)
-        # job_dtl_id_row_2_update.duration = job_dtl_id_row_2_update.end_date - job_dtl_id_row_2_update.start_date
+            # We will also mark the header job as failure.
 
-        job_hdr_id_row_2_update.updated_date = datetime.now()
-        job_hdr_id_row_2_update.comments = str(comments)    # only string values else will error out.
-        # max_run_sequence = 0
-        # print(f'committing to the DB', db.session.dirty, db.session.new)
-        # db.session.commit()
+            try:
+                # db.session.merge(job_dtl_id_row_2_update)
+                logger.debug(f'committing to the DB for the job Header id {job_header_id}', db.session.dirty, db.session.new)
+                db.session.commit()
 
-        # We will also mark the header job as failure.
+            except Exception as error:
+                db.session.rollback()
+                logger.error(f' Got error while updating the DB for the job Header ID {job_header_id}; error as {error}')
+                # raise error # Not raising it as it is in the final block of the pipeline execution
 
-        try:
-            # db.session.merge(job_dtl_id_row_2_update)
-            logger.debug(f'committing to the DB for the job Header id {job_header_id}', db.session.dirty, db.session.new)
-            db.session.commit()
 
-        except Exception as error:
-            db.session.rollback()
-            logger.error(f' Got error while updating the DB for the job Header ID {job_header_id}; error as {error}')
-            # raise error # Not raising it as it is in the final block of the pipeline execution
+def update_header_table_processing(comments, appln):
+    ''' Update the Header table with PROCESSING status to FAILURE with comments. If upon start any of the rows
+     are found with PROCESSING status , then update those'''
+    with appln.app_context():
+        with db.session():  # this takes care of closing the session and releasing to the pool at the end of the work
+            bcm_monitor_hdr = BCMMonitorHDR()
 
-# For unit testing:
-# if __name__ == "__main__":
-#     print(__name__)
-#     # app.debug = True
-#     # db.create_all(app=app)
-#     # app.run()
-#
-#     import cx_Oracle
-#     import run, BCM
-#     from flask import current_app
-#
-#     # initializing the cx_Oracle client to connect to the Oracle database.
-#     cx_Oracle.init_oracle_client(lib_dir=BCM.app.config["ORACLE_CLIENT_PATH"])
-#
-#     appln, db = run.create_ccm_app()    # as it returns the tuple of application and db
-#     with appln.app_context():
-#         select_from_CCMMonitorHDR(1, current_app)
+            db_row_4_status_upd = bcm_monitor_hdr.query.filter_by(status=StatusEnum.PROCESSING).all()
+            print('update_header_table_processing db_row_4_status_upd ', db_row_4_status_upd)
+
+            for row in db_row_4_status_upd:
+                logger.debug(f' Topic Id {row.id} being updated for status, from PROCESSING to FAILURE')
+                print(f' Topic Id {row.id} being updated for status, from PROCESSING to FAILURE')
+                row.status = StatusEnum.FAILURE
+                row.end_date = datetime.now()
+                row.updated_date = datetime.now()
+                row.comments = comments
+                row.duration = (row.end_date - row.updated_date)/timedelta(minutes=1)
+                print(f' Header row modified is {row}')
+
+            try:
+                logger.debug(f'committing to the DB for the job Header ', db.session.dirty, db.session.new)
+                db.session.commit()
+
+            except Exception as error:
+                db.session.rollback()
+                logger.error(f' Got error while updating the DB for the job Header error as {error}')
+
