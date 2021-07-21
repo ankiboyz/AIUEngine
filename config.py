@@ -33,7 +33,7 @@ PORT = '50008'
 # for dev keep it as 'config.DevelopmentConfig'
 # for prod keep it as 'config.ProductionConfig'
 # For current testing keeping it as 'config.TestingConfig'
-APP_CONFIG_MODE = 'config.DevelopmentConfig'
+APP_CONFIG_MODE = 'config.TestingConfig'
 
 
 '''All Configurations here DB as well as Logging based on the environment'''
