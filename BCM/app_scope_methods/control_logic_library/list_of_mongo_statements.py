@@ -187,6 +187,7 @@ AG_PIPELINE_FIN08_FA_1_4 = '[{{"$match": {{"runID": {{"$eq": "{run_id}"}},\
                                              , "whenMatched":[ \
                                                               {{"$addFields":\
                                                                 {{"GLT_lastUpdatedDateTime": "$$new.GLT_lastUpdatedDateTime"\
+                                                                 ,"runID": "$$new.runID"\
                                                                  ,"GLT_do_auto_close":"$$new.GLT_do_auto_close"\
                                                                  ,"GLT_do_auto_reopen":False\
                                                                  ,"GLT_history_runID": {{"$concatArrays":["$$new.GLT_history_runID", {{"$cond":{{"if":{{"$eq":[{{"$ifNull":["$GLT_history_runID",""]}}, ""]}}, "then":[], "else":"$GLT_history_runID"}}}}]}}\
