@@ -55,7 +55,7 @@ handlers:
     filters: [ContextualFilter]
     #file name
 #    filename: BCM/ccm_logs/ccm_debug_logs.log
-    filename: BCM/ccm_logs/bcm_debug_logs.log
+    filename: BCM/bcm_logs/bcm_debug_logs.log
     #max store value 5 MB
     maxBytes: 5242880
     # Backup count - Rollover attribute
@@ -69,7 +69,7 @@ handlers:
     formatter: standard
     filters: [ContextualFilter]
 #    filename: BCM/ccm_logs/ccm_error_logs.log
-    filename: BCM/ccm_logs/bcm_error_logs.log
+    filename: BCM/bcm_logs/bcm_error_logs.log
     maxBytes: 5242880
     backupCount: 20
     encoding: utf8
@@ -80,7 +80,7 @@ handlers:
     formatter: standard
     filters: [ContextualFilter]
 #    filename: BCM/ccm_logs/ccm_info_logs.log
-    filename: BCM/ccm_logs/bcm_info_logs.log
+    filename: BCM/bcm_logs/bcm_info_logs.log
     maxBytes: 5242880
     backupCount: 20
     encoding: utf8

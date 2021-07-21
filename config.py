@@ -201,5 +201,8 @@ class TestingConfig(Config):
                         "&authMechanism=SCRAM-SHA-1&readPreference=primary" \
                         "&appname=GLT_BCM_AIUENGINE&ssl=false"
 
+    WHETHER_SUBMIT_TO_KAFKA = True
+    MAX_NUM_OF_CONSUMERS_AT_ONE_TIME = 4
+
 
 
