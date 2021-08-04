@@ -455,7 +455,7 @@ def whether_all_function_recs_done_decisional_node(appln_cntxt, db_session, mong
      This is check to know whether we need to further continue or proceed to exit .
      This is a decision stage so here , 1 will denote proceed to yesID and no to denote proceed to noID .
 
-     IMP: this is the decision node and can only emit out status as yesID, noID or 0 (i.e FAILURE);
+     IMP: this is the decision node and can only emit out (i.e. return) status as yesID, noID or 0 (i.e FAILURE);
      It cannot have a status as SUCCESS emitted out! --- V.Imp to remember else if it emits SUCCESS then yesID wil be considered
      '''
 

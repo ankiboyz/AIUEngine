@@ -55,5 +55,12 @@ SPECIFIC_CONTROLS_METADATA = {
                                                   , 'KEY2': IndexKeys([("runID", pymongo.ASCENDING)], 'EXCEPTION_FIN08_FA_1', {'unique': False, 'name': 'GLT_BCM_runID'})
                                                   , 'KEY3': IndexKeys([("exceptionID", pymongo.ASCENDING)], 'EXCEPTION_FIN08_FA_1', {'unique': False, 'name': 'GLT_BCM_exceptionID'})
                                                   }
+                                   },
+                    'FIN08_AP_AR_1': {  # 'LIMIT_FOR_RECS_PROCESSING_IN_ONE_ITERATION': 10,
+                                      # This is a tuple - first tuple being list of tuples
+                                      'INDEXES': {'KEY1': IndexKeys([("COMPOSITEKEY", pymongo.ASCENDING)], 'EXCEPTION_FIN08_AP_AR_1', {'unique': True, 'name': 'GLT_BCM_COMPOSITE_KEY'})
+                                                  , 'KEY2': IndexKeys([("runID", pymongo.ASCENDING)], 'EXCEPTION_FIN08_AP_AR_1', {'unique': False, 'name': 'GLT_BCM_runID'})
+                                                  , 'KEY3': IndexKeys([("exceptionID", pymongo.ASCENDING)], 'EXCEPTION_FIN08_AP_AR_1', {'unique': False, 'name': 'GLT_BCM_exceptionID'})
+                                                  }
                                    }
                             }

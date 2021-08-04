@@ -78,14 +78,20 @@ Appendix A - Automated Control Execution via Configurable Pipeline
     e. Stage having stage_type as 'processing' will do some processing and proceed_to will have a single value.
     
     f. Stage having stage_type as 'decision' will make a decision as to move to which stage based on the logic
-       outputting boolean True/False. Decision type node can either return True/False to take a decision whether to move to 
+       outputting boolean True/False. 
+       Decision type node can either return yesID/noID/FAILURE to take a decision whether to move to 
        yes_ID Stage or to no_ID Stage. It can also either emit out exception in case its unhandled 
-       or it can also return value as 'ERROR' to denote the error happened in the execution.
-       The STATUS key of returned result dictionary can have values as True/False/ERROR.
+       or it can also return value object's STATUS key's value as 'FAILURE' to denote the error happened in the execution.
+       The STATUS key of returned result dictionary can have values as yesID/noID/FAILURE.
        
-    g. Here, decision node currently have yes_ID and no_ID based on decision method's outcome as True/False
+    g. Here, decision node currently have yes_ID and no_ID as values of STATUS in the return object.
+       
        Here, there would be a need for an error fork as well , in case if error happens then 
        decision cannot only be forked for true/false. Would be needed for advance use cases.; for now false also handles error cases.
+       The above needed change has been made and a return value with Status as Failure been supported now.
+       
+       So, Decision node can only emit out (i.e. return) status as yesID, noID or 0 (i.e FAILURE).
+       
     h. processing type of stage returns boolean op : True denotes exec happened fine, False denotes some error happened.
        the stage processor methods can return the boolean o/p or a response dictionary of a specific structure.
     e. Every Stage should have the STAGE_PROCESSOR key , if no method need be invoked then put in blank for method,
@@ -103,6 +109,7 @@ Appendix A - Automated Control Execution via Configurable Pipeline
        
        
        caveat : currently the support to execute the module import and a different method both to be done is not supported.
+       This caveat is taken care of now; so support is added for both the module import and the method execution.
     
     
     Following changes are envisioned in the future release:
