@@ -286,6 +286,7 @@ AG_PIPELINE_FIN08_FA_1_4 = '[{{"$match": {{"runID": {{"$eq": "{run_id}"}},\
 																,"GLT_history_runID": {{"$concatArrays":["$$new.GLT_history_runID", {{"$cond":{{"if":{{"$eq":[{{"$ifNull":["$GLT_history_runID",""]}}, ""]}}, "then":[], "else":"$GLT_history_runID"}}}}]}}  \
                                                                 ,"exceptionID": {{"$toString": "$_id"}}\
                                                                 ,"FILENAME":"$$new.FILENAME"\
+																,"GLT_CREATED_ON":"$$new.GLT_CREATED_ON"\
                                                                 ,"SLCOST":"$$new.SLCOST"\
                                                                 ,"GLCOST":"$$new.GLCOST"\
                                                                 ,"RECON":"$$new.RECON"\
@@ -300,7 +301,7 @@ AG_PIPELINE_FIN08_FA_1_4 = '[{{"$match": {{"runID": {{"$eq": "{run_id}"}},\
                                                                 ,"IMDIF":"$$new.IMDIF"\
                                                                 }}\
 													 }}\
-													]\
+													]													\
 									  , "whenNotMatched": "insert"}} \
 						  }}\
 						  ]'
