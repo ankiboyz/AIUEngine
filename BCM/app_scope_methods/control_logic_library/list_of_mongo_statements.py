@@ -17,6 +17,7 @@ the caller e.g. run_id , function_id as {run_id} and {function_id}.
 7. It needs to be ensured that the dynamic variables i.e. those put under curly braces as of step 6 need to be resolved from the code.
 8. Do not place any braces for the functions whose value need be resolved when the actual call happens eg datetime.datetime.utcnow().
 9. Put string quotes before and after string values those will be resolved after f-string conversion eg as "{run_id}", "{function_id}"
+here, the values that need to be resolved as numeric eg limit_for_recs_processing_in_one_iteration should not be enclosed in double quotes ""
 10. Do not put any comments in the pipeline. It is recommended to Ctrl+F the occurrences of #.
 11. Include the pipeline code as mentioned here between [].
 12. The value of the pipeline variable here eg AG_PIPELINE_TFA02_IFA19_1_3 is enclosed within single quotes '' as shown below '[....]'.
@@ -171,35 +172,138 @@ AG_PIPELINE_TRE07_1_4 = '[{{"$match": {{"runID": {{"$eq": "{run_id}"}},\
                           }}\
                           ]'
 
+AG_PIPELINE_FIN08_FA_1_3 = '[{{"$match": {{"runID": {{"$eq": "{run_id}" }}\
+                                           ,"GLT_is_this_realized": {{"$ne": "DONE"}} \
+                                           }}\
+                                           }}\
+						 ,{{"$limit": {limit_for_recs_processing_in_one_iteration}}}\
+						 ,{{"$addFields" : {{"GLT_lastUpdatedDateTime": datetime.datetime.utcnow()\
+										 , "GLT_is_this_realized": "IN-PROCESS"	 \
+										  }}\
+						  }}\
+                         ,{{"$lookup": \
+                           {{\
+                               "from":"{exception_collection_name}"\
+                              , "let": {{"foreignField":"$COMPOSITEKEY"}}\
+                              ,"pipeline": [\
+                                              {{"$match": \
+                                               {{"$expr":\
+                                                   {{ "$eq": [ "$COMPOSITEKEY",  "$$foreignField" ] }}\
+                                               }}\
+                                              }}\
+                                             ,{{"$sort" : {{"GLT_incremental_number": -1}}}}                         \
+                                           ]\
+                              ,"as": "matched_existing_exception"\
+                           }}\
+                          }},\
+                          {{"$addFields":{{"firstelem":{{"$first":"$matched_existing_exception"}}}}\
+                            }},\
+                          {{"$addFields":{{"GLT_exception_status":"$firstelem.status",\
+                                         "GLT_incremental_number":{{"$ifNull":["$firstelem.GLT_incremental_number",1]}} \
+                                        }}\
+                          }},\
+                          {{"$addFields":{{\
+                                          "GLT_do_exception_exist":{{"$cond":\
+                                                                    {{"if":{{\
+                                                                        "$eq":[{{"$ifNull":["$GLT_exception_status","X"]}}, "X"]\
+                                                                          }}, \
+                                                                     "then":\
+                                                                         False, \
+                                                                     "else":\
+                                                                         True\
+                                                                    }}\
+                                                                   }}\
+                          }}}},\
+                          {{"$addFields":{{\
+                                          "GLT_incremental_number":{{"$cond":\
+                                                                    {{"if":{{"$and":[{{"$eq":["$GLT_do_exception_exist",True]}},{{"$eq":["$GLT_exception_status","Closed"]}}]}}, \
+                                                                     "then":\
+                                                                         {{"$add":["$GLT_incremental_number",1]}}, \
+                                                                     "else":\
+                                                                         "$GLT_incremental_number" \
+                                                                    }}\
+                                                                   }}\
+                          }}}},\
+                           {{"$addFields":{{ \
+                                         "GLT_do_discard":{{"$and":\
+                                                           [{{"$eq":["$GLT_exception_status","Closed"]}},{{"$eq":["$IMDIF","X"]}}]}} \
+                                         }} \
+                            }},\
+                         {{"$addFields":{{\
+                          "GLT_history_exceptions_match" : {{"$concatArrays":[[{{"exceptionID": "$firstelem.exceptionID"\
+                                                                             , "GLT_lastUpdatedDateTime": "$GLT_lastUpdatedDateTime"\
+                                                                             , "COMPOSITEKEY": "$firstelem.COMPOSITEKEY"\
+                                                                             , "GLT_incremental_number": "$firstelem.GLT_incremental_number"\
+                                                                             , "exception_runID": "$firstelem.runID"\
+                                                                             , "function_runID": "$runID"\
+                                                                            }}]\
+                                                                           ,{{"$cond":{{"if":{{"$eq":[{{"$ifNull":["$GLT_history_exceptions_match",""]}}, ""]}}, "then":[], "else":"$GLT_history_exceptions_match"}}}}]\
+                                              }}\
+                        \
+                         }}}},\
+                          {{"$project": {{"firstelem":0, "matched_existing_exception":0}}}}\
+						 ,{{"$merge" : {{ "into": "{function_id}"\
+									  , "on": "_id" \
+									  , "whenMatched":[ \
+													 {{"$addFields":\
+																{{"GLT_lastUpdatedDateTime": "$$new.GLT_lastUpdatedDateTime"\
+																,"GLT_is_this_realized": "$$new.GLT_is_this_realized"\
+                                                                ,"GLT_history_exceptions_match": "$$new.GLT_history_exceptions_match"\
+                                                                ,"GLT_exception_status": "$$new.GLT_exception_status"\
+                                                                ,"GLT_do_exception_exist": "$$new.GLT_do_exception_exist"\
+                                                                ,"GLT_do_discard": "$$new.GLT_do_discard"\
+                                                                ,"GLT_incremental_number": "$$new.GLT_incremental_number"\
+																}}\
+													 }}\
+													]													\
+									  , "whenNotMatched": "discard" }} \
+						  }},\
+						  ]'
+
 AG_PIPELINE_FIN08_FA_1_4 = '[{{"$match": {{"runID": {{"$eq": "{run_id}"}},\
-                                           "GLT_is_this_realized": "IN-PROCESS"}}}}\
-                             ,{{"$project": {{"_id": 0, "GLT_is_this_realized": 0}}}}\
-                             ,{{"$addFields" : {{\
-                                                 "status": "Unassigned"\
-                                               , "control_id": "{control_id}"\
-                                               , "GLT_history_runID" : {{"$concatArrays":[[{{"runID": "$runID", "GLT_lastUpdatedDateTime": "$GLT_lastUpdatedDateTime"}}],{{"$cond":{{"if":{{"$eq":[{{"$ifNull":["$GLT_history_runID",""]}}, ""]}}, "then":[], "else":"$GLT_history_runID"}}}}]}}\
-                                               , "exceptionID" : ""\
-                                               , "reason_code": ""\
-                                               , "GLT_do_auto_close": {{"$cond":{{"if":{{"$eq":["$IMDIF", "X"]}}, "then":True, "else":False}}}}\
-                                               , "GLT_do_auto_reopen": False\
-                              }} \
-                             }}\
-                             ,{{"$merge" : {{ "into": "{exception_collection_name}"\
-                                             , "on": "COMPOSITEKEY"\
-                                             , "whenMatched":[ \
-                                                              {{"$addFields":\
-                                                                {{"GLT_lastUpdatedDateTime": "$$new.GLT_lastUpdatedDateTime"\
-                                                                 ,"runID": "$$new.runID"\
-                                                                 ,"GLT_do_auto_close":"$$new.GLT_do_auto_close"\
-                                                                 ,"GLT_do_auto_reopen":False\
-                                                                 ,"GLT_history_runID": {{"$concatArrays":["$$new.GLT_history_runID", {{"$cond":{{"if":{{"$eq":[{{"$ifNull":["$GLT_history_runID",""]}}, ""]}}, "then":[], "else":"$GLT_history_runID"}}}}]}}\
-                                                                 ,"exceptionID": {{"$toString": "$_id"}}\
-                                                               }}\
-                                                               }}\
-                                                              ]\
-                                             , "whenNotMatched": "insert" }}\
-                             }}\
-                             ]'
+									 "GLT_is_this_realized": "IN-PROCESS"}}}}\
+						 ,{{"$project": {{"_id": 0, "GLT_is_this_realized": 0\
+                                       ,"GLT_do_exception_exist": 0, "GLT_do_discard":0\
+                                       ,"GLT_history_exceptions_match":0, "GLT_exception_status":0}}}}\
+						 ,{{"$addFields" : {{\
+                                           "status": "Unassigned"\
+										 , "control_id": "{control_id}"\
+										 , "GLT_history_runID" : {{"$concatArrays":[[{{"runID": "$runID", "GLT_lastUpdatedDateTime": "$GLT_lastUpdatedDateTime"}}],{{"$cond":{{"if":{{"$eq":[{{"$ifNull":["$GLT_history_runID",""]}}, ""]}}, "then":[], "else":"$GLT_history_runID"}}}}]}}	\
+										 , "exceptionID" : "" \
+										 , "reason_code": ""  \
+                                         , "GLT_do_auto_close": {{"$cond":{{"if":{{"$eq":["$IMDIF", "X"]}}, "then":True, "else":False}}}}\
+                                         , "GLT_do_auto_reopen": False  \
+										 }} \
+						  }}\
+						 ,{{"$merge" : {{ "into": "{exception_collection_name}"\
+									  , "on": ["COMPOSITEKEY", "GLT_incremental_number"] \
+									  , "whenMatched":[ \
+													 {{"$addFields":\
+																{{"GLT_lastUpdatedDateTime": "$$new.GLT_lastUpdatedDateTime"\
+                                                                ,"runID": "$$new.runID"\
+                                                                ,"GLT_do_auto_close":"$$new.GLT_do_auto_close"  \
+                                                                ,"GLT_do_auto_reopen":False \
+																,"GLT_history_runID": {{"$concatArrays":["$$new.GLT_history_runID", {{"$cond":{{"if":{{"$eq":[{{"$ifNull":["$GLT_history_runID",""]}}, ""]}}, "then":[], "else":"$GLT_history_runID"}}}}]}}  \
+                                                                ,"exceptionID": {{"$toString": "$_id"}}\
+                                                                ,"FILENAME":"$$new.FILENAME"\
+                                                                ,"SLCOST":"$$new.SLCOST"\
+                                                                ,"GLCOST":"$$new.GLCOST"\
+                                                                ,"RECON":"$$new.RECON"\
+                                                                ,"F08_ACUM_DEP_AMOUNT":"$$new.F08_ACUM_DEP_AMOUNT"\
+                                                                ,"F08_UNPL_AMOUNT":"$$new.F08_UNPL_AMOUNT"\
+                                                                ,"GL_ACUM_AMOUNT":"$$new.GL_ACUM_AMOUNT"\
+                                                                ,"ASSET_ACUM_DEP":"$$new.ASSET_ACUM_DEP"\
+                                                                ,"ACUM_RECON_DIFF":"$$new.ACUM_RECON_DIFF"\
+                                                                ,"E_ACUM_RECON_DIFF":"$$new.E_ACUM_RECON_DIFF"\
+                                                                ,"E_GL_RECON_DIFF":"$$new.E_GL_RECON_DIFF"\
+                                                                ,"RATING":"$$new.RATING"\
+                                                                ,"IMDIF":"$$new.IMDIF"\
+                                                                }}\
+													 }}\
+													]\
+									  , "whenNotMatched": "insert"}} \
+						  }}\
+						  ]'
 
 AG_PIPELINE_FIN08_AP_AR_1_3 = '[{{"$match": {{"runID": {{"$eq": "{run_id}"}},\
 									 "GLT_is_this_realized":  {{"$ne": "DONE"}}}}\

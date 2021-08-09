@@ -334,7 +334,7 @@ PIPELINE = {'TFA02_IFA19_1':
                                              , proceed_to='STAGE2')
                             , "STAGE_PROCESSOR": StageProcessor(path_to_module='BCM.app_scope_methods'
                                                                                '.control_logic_library.benevolent_methods'
-                                                                , method_name='prepare_playground_clear_vestige'
+                                                                , method_name='prepare_playground_clear_vestige_advanced'
                                                                 )
                          # , arguments={'args': (1, 2, 3), 'kwargs': {'d': 4, }})
                          # currently not handling arguments reserved for
@@ -358,8 +358,8 @@ PIPELINE = {'TFA02_IFA19_1':
                                              , stage_type='processing'
                                              , proceed_to='STAGE4')
                             , "STAGE_PROCESSOR": StageProcessor(path_to_module='BCM.app_scope_methods'
-                                                                               '.control_logic_library.benevolent_methods'
-                                                                , method_name='mark_the_ones_to_be_handled')
+                                                                               '.control_logic_library.control_FIN08_FA'
+                                                                , method_name='method_fin08_fa_3')
                          },
                         {"ID": "STAGE4"
                             , "STAGE": Stage(name="PROCESS_AND_MERGE"
@@ -505,4 +505,5 @@ PIPELINE = {'TFA02_IFA19_1':
                                                                 , method_name='')
                          },
                     ]
+
             }   # closure of overall Pipeline dictionary

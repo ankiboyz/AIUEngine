@@ -177,14 +177,28 @@ class DevelopmentConfig(Config):
     DEBUG = True
     SQLALCHEMY_ECHO = True
 
-    WHETHER_SUBMIT_TO_KAFKA = False
+    WHETHER_SUBMIT_TO_KAFKA = True
+    MAX_NUM_OF_CONSUMERS_AT_ONE_TIME = 5
     MAX_NUM_OF_THREADS_AT_ONE_TIME = 1
 
 class StagingConfig(Config):
     DEVELOPMENT = True
     DEBUG = True
-    KAFKA_BROKER_URLS = ['192.168.2.239:9092', ]
-    MAX_NUM_OF_CONSUMERS_AT_ONE_TIME = 3
+
+    SQLALCHEMY_DATABASE_URI = 'oracle://BCMDEV:green123@sapsr3db.c6djbyal1avz.us-west-2.rds.amazonaws.com:1521/RCMDB'
+    KAFKA_BROKER_URLS = ['10.150.75.36:9092', ]
+    # EBCP_CALL_BACK_URL = 'https://philips.gltcloud.com/ebcpplatform-qa/exceptionGenerator/acknowledgeBCMExceptionGeneration'
+    EBCP_VERIFY_CERT = False
+
+    MONGO_DB_CONN_URI = "mongodb://BCMDEVUSER:green123@10.0.2.184:27017/BCMDEV" \
+                        "?authSource=BCMDEV" \
+                        "&authMechanism=SCRAM-SHA-1&readPreference=primary" \
+                        "&appname=GLT_BCM_AIUENGINE&ssl=false"
+
+    WHETHER_SUBMIT_TO_KAFKA = False
+    MAX_NUM_OF_THREADS_AT_ONE_TIME = 3
+
+    MAX_NUM_OF_CONSUMERS_AT_ONE_TIME = 4
 
 
 class TestingConfig(Config):
@@ -200,7 +214,7 @@ class TestingConfig(Config):
                         "&appname=GLT_BCM_AIUENGINE&ssl=false"
 
     WHETHER_SUBMIT_TO_KAFKA = True
-    MAX_NUM_OF_CONSUMERS_AT_ONE_TIME = 4
+    MAX_NUM_OF_CONSUMERS_AT_ONE_TIME = 5
 
 
 

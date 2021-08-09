@@ -8,8 +8,8 @@ version: 1
 
 # Disable previously configured loggers, b'coz of this value as false the loggers that are initialized before app, those are also logged
 # example the commons.general_methods, with same formatting as devised here.
-# value as true suppresses the messages from the libraries used example Kafka etc.
-disable_existing_loggers: true
+# value as true suppresses the messages from the libraries used example Kafka etc. but also some of the logs from the application also get suppressed
+disable_existing_loggers: false
 
 # filters definition - filter can be used for filtering of log records as well enriching with additional fields
 filters:
@@ -108,7 +108,7 @@ root:
 # In case loggers for some specific modules need to be defined; those can also be defined here.
 # For every app , its parent package level can be defined here.
 loggers:
-    CCM:
+    BCM:
         level: DEBUG  # here , this level should be based on the level of whether app is in Debug mode! choice is between INFO/DEBUG, as we log configurations of the app at INFO level.
         handlers: [debug_file_handler, error_file_handler, console, info_file_handler]
         propagate: no # NO propagation beyond this, since this is the root for this app.

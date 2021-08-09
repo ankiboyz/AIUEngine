@@ -330,7 +330,7 @@ def update_detail_table(job_detail_id, status, comments, appln):
         # db.session.commit()
         try:
             # db.session.merge(job_dtl_id_row_2_update)
-            logger.debug(f'committing to the DB for the job detail id {job_detail_id}', db.session.dirty, db.session.new)
+            # logger.debug(f'committing to the DB for the job detail id {job_detail_id}', db.session.dirty, db.session.new)
             db.session.commit()
             # Once the detail updated , updating the Header ID as well.
             # if status == 0:
@@ -398,7 +398,8 @@ def update_header_table(job_header_id, status, comments, appln):
 
             try:
                 # db.session.merge(job_dtl_id_row_2_update)
-                logger.debug(f'committing to the DB for the job Header id {job_header_id}', db.session.dirty, db.session.new)
+                # logger.debug(f'committing to the DB for the job Header id {job_header_id}', db.session.dirty, db.session.new)
+                # getting error in above statement as : TypeError: not all arguments converted during string formatting
                 db.session.commit()
 
             except Exception as error:
@@ -428,7 +429,8 @@ def update_header_table_processing(comments, appln):
                 print(f' Header row modified is {row}')
 
             try:
-                logger.debug(f'committing to the DB for the job Header ', db.session.dirty, db.session.new)
+                # logger.debug(f'committing to the DB for the job Header ', str(db.session.dirty), str(db.session.new))
+                # getting error in above statement as : TypeError: not all arguments converted during string formatting
                 db.session.commit()
 
             except Exception as error:

@@ -42,7 +42,7 @@ def status_sync_with_ebcp(job_hdr_id, status, response_list, appln ):
     response_dict['CONTROL_ID_LIST'] = control_id_list
     response_dict['FUNCTION_ID'] = function_id
     response_dict['ID'] = id
-    response_dict['ADDINTIONAL_INFO'] = comments_truncated + '...'
+    response_dict['ADDITIONAL_INFO'] = comments_truncated + '...'
     # based on status call either success or Failure message
     # std_err_resp_dict = structured_response.StructuredResponse(response_dict, 'GenericException') \
     #     .structure_the_error()

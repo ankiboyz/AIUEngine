@@ -535,3 +535,71 @@ def whether_all_function_recs_done_decisional_node(appln_cntxt, db_session, mong
 
     finally:
         return stg_op_response_obj.method_op_dict
+
+def prepare_playground_clear_vestige_advanced(appln_cntxt, db_session, mongo_client, control_params_dict):
+    ''' This method is used to work as Stage 1 for the control.
+     Wherein it prepares the Playground for the execution of the control.
+     This is an advanced method of clearing vestige wherein additional fields are being set to blank.'''
+
+    logger.info(f' Executing the control library with args {control_params_dict} ')
+
+    stg_op_response_obj = structured_response.StageOutputResponseDict()
+
+    # with db_session.begin():    #Not needed in the methods now taken care at the pipeline execution side to put in additional details for committing to DB if needed
+    #     pass
+
+    # # Setting transiently for now. These are already set in the set_controls_param dict now
+    # control_params_dict["FUNCTION_ID"] = 'TFA02_COPY'
+    # control_params_dict["RUN_ID"] = '1b90f9d5-094d-4816-a8a8-8ddf04247486-1622726323002'
+
+    try:
+        # this will get the database from the URI string
+        db_from_uri_string = mongo_client.get_database()
+
+        # Add informatives to the DETAIL_SECTION
+        stg_op_response_obj.add_to_detail_section_dict('DATABASE_NAME', db_from_uri_string.name
+                                                       , 'This is the Mongo DB connected for this stage' )
+
+        # getting the function collection to operate upon
+        function_id = control_params_dict["FUNCTION_ID"]
+
+        # Temporarily placed here for Testing
+        # print('FINAL PARAMETERS DICT', control_params_dict)
+        # print('Indexes --> for this control', control_params_dict['INDEXES']['KEY1'].KEY_COMPONENT)
+
+        stg_op_response_obj.add_to_detail_section_dict('FUNCTION_COLLECTION', function_id
+                                                       , 'This is the Mongo DB collection operated upon for this stage')
+
+        # getting the RunId
+        run_id = control_params_dict["RUN_ID"]
+        stg_op_response_obj.add_to_detail_section_dict('RUN_ID', run_id
+                                                       , 'This is the runID passed for this stage execution')
+
+        # Execute the Pipeline Code, Here this statement for update is different for this control.
+        result_from_update = db_from_uri_string[function_id]\
+            .update_many({"runID": {"$eq": run_id},
+                          "GLT_is_this_realized": "IN-PROCESS"},
+                         {"$set": {"GLT_is_this_realized": "", "GLT_exception_status": ""
+                                   , "GLT_do_exception_exist": "", "GLT_do_discard": ""}}  # make it blank
+                         )
+
+        stg_op_response_obj.add_to_detail_section_dict('RESULT_FROM_OPERATION', 'UPDATE_MANY'
+                                                       , f'modified count = {result_from_update.modified_count} '
+                                                         f'matched count =  {result_from_update.matched_count} '
+                                                       )
+
+        stg_op_response_obj.add_to_status(1)    # 1 denotes SUCCESS
+        stg_op_response_obj.add_to_status_comments('executed_successfully')
+
+        logger.debug(f' As a result of the operation of the method on the input parameters {control_params_dict} '
+                     f'following is the response output {stg_op_response_obj.method_op_dict}')
+
+    except Exception as error:
+        logger.error(f'Error encountered while executing method having input params as {control_params_dict} '
+                     f'error being {error}', exc_info=True)
+
+        stg_op_response_obj.add_to_status(0)    # 0 denotes Failure
+        stg_op_response_obj.add_to_status_comments(str(error))
+
+    finally:
+        return stg_op_response_obj.method_op_dict
