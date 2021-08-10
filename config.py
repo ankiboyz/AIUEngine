@@ -32,8 +32,9 @@ PORT = '50008'
 # This determine which set of the configurations as defined below per class will be taken up.
 # for dev keep it as 'config.DevelopmentConfig'
 # for prod keep it as 'config.ProductionConfig'
-# For current testing keeping it as 'config.TestingConfig'
-APP_CONFIG_MODE = 'config.DevelopmentConfig'
+# 'config.TestingConfig'
+# For current testing keeping it as 'config.StagingConfig'
+APP_CONFIG_MODE = 'config.StagingConfig'
 
 '''All Configurations here DB as well as Logging based on the environment'''
 
