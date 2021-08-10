@@ -91,10 +91,37 @@ AG_PIPELINE_TFA02_IFA19_1_4 = '[{{"$match": {{"runID": {{"$eq": "{run_id}"}},\
                                                          {{"$addFields":\
                                                                     {{"GLT_lastUpdatedDateTime": "$$new.GLT_lastUpdatedDateTime"\
                                                                     ,"runID": "$$new.runID"\
+																	,"FILENAME":"$$new.FILENAME"\
+																	,"GLT_CREATED_ON":"$$new.GLT_CREATED_ON"\
                                                                     ,"GLT_do_auto_close":"$$new.GLT_do_auto_close"\
                                                                     ,"GLT_whether_S2A": "$$new.GLT_whether_S2A"\
                                                                     ,"GLT_history_runID": {{"$concatArrays":["$$new.GLT_history_runID", {{"$cond":{{"if":{{"$eq":[{{"$ifNull":["$GLT_history_runID",""]}}, ""]}}, "then":[], "else":"$GLT_history_runID"}}}}]}}\
                                                                     ,"exceptionID": {{"$toString": "$_id"}}\
+																	,"USNAM":"$$new.USNAM"\
+																	,"NAME_TEXT":"$$new.NAME_TEXT"\
+																	,"KOSTL":"$$new.KOSTL"\
+																	,"KOSTL_VALID":"$$new.KOSTL_VALID"\
+																	,"CAUFN":"$$new.CAUFN"\
+																	,"CAUFN_VALID":"$$new.CAUFN_VALID"\
+																	,"POSNR":"$$new.POSNR"\
+																	,"PNR_VALID":"$$new.PNR_VALID"\
+																	,"UDATE":"$$new.UDATE"\
+																	,"UTIME":"$$new.UTIME"\
+																	,"TCODE":"$$new.TCODE"\
+																	,"CNGID":"$$new.CNGID"\
+																	,"VALUE_NEW":"$$new.VALUE_NEW"\
+																	,"VALUE_OLD":"$$new.VALUE_OLD"\
+																	,"WAERS":"$$new.WAERS"\
+																	,"AVCC":"$$new.AVCC"\
+																	,"AVEUR":"$$new.AVEUR"\
+																	,"RATING":"$$new.RATING"\
+																	,"EXCEPTION":"$$new.EXCEPTION"\
+																	,"CDHDR_OBJCLAS":"$$new.CDHDR_OBJCLAS"\
+																	,"CDHDR_OBJCTID":"$$new.CDHDR_OBJCTID"\
+																	,"CDHDR_CHANGENR":"$$new.CDHDR_CHANGENR"\
+																	,"CDPOS_OBJCLAS":"$$new.CDPOS_OBJCLAS"\
+																	,"CDPOS_OBJTID":"$$new.CDPOS_OBJTID"\
+																	,"CDPOS_CHANGENR":"$$new.CDPOS_CHANGENR"\
                                                                     }}\
                                                          }}\
                                                         ]\
@@ -161,10 +188,23 @@ AG_PIPELINE_TRE07_1_4 = '[{{"$match": {{"runID": {{"$eq": "{run_id}"}},\
                                                      {{"$addFields":\
                                                                 {{"GLT_lastUpdatedDateTime": "$$new.GLT_lastUpdatedDateTime"\
                                                                 ,"runID": "$$new.runID"\
+                                                                ,"FILENAME":"$$new.FILENAME"\
+																,"GLT_CREATED_ON":"$$new.GLT_CREATED_ON"\
                                                                 ,"GLT_do_auto_close":{{"$cond":{{"if":{{"$eq":["$$new.EXP_STATUS", "Cleared Item"]}}, "then":True, "else":False}}}}\
                                                                 ,"GLT_do_auto_reopen":{{"$cond":{{"if":{{"$and":[{{"$eq":["$$new.EXP_STATUS", "Open Item"]}},{{"$eq":["$status", "Closed"]}}]}}, "then":True, "else":False}}}}\
                                                                 ,"GLT_history_runID": {{"$concatArrays":["$$new.GLT_history_runID", {{"$cond":{{"if":{{"$eq":[{{"$ifNull":["$GLT_history_runID",""]}}, ""]}}, "then":[], "else":"$GLT_history_runID"}}}}]}}\
                                                                 ,"exceptionID": {{"$toString": "$_id"}}\
+																,"XOPVW":"$$new.XOPVW"\
+																,"AGE":"$$new.AGE"\
+																,"EXP_STATUS":"$$new.EXP_STATUS"\
+																,"XSTOV":"$$new.XSTOV"\
+																,"XREVERSAL":"$$new.XREVERSAL"\
+																,"XRAGL":"$$new.XRAGL"\
+																,"ZUONR":"$$new.ZUONR"\
+																,"XBLNR1":"$$new.XBLNR1"\
+																,"SGTXT":"$$new.SGTXT"\
+																,"RATING":"$$new.RATING"\
+																,"BLART":"$$new.BLART"\
                                                                 }}\
                                                      }}\
                                                     ]\
@@ -281,12 +321,12 @@ AG_PIPELINE_FIN08_FA_1_4 = '[{{"$match": {{"runID": {{"$eq": "{run_id}"}},\
 													 {{"$addFields":\
 																{{"GLT_lastUpdatedDateTime": "$$new.GLT_lastUpdatedDateTime"\
                                                                 ,"runID": "$$new.runID"\
+                                                                ,"FILENAME":"$$new.FILENAME"\
+																,"GLT_CREATED_ON":"$$new.GLT_CREATED_ON"\
                                                                 ,"GLT_do_auto_close":"$$new.GLT_do_auto_close"  \
                                                                 ,"GLT_do_auto_reopen":False \
 																,"GLT_history_runID": {{"$concatArrays":["$$new.GLT_history_runID", {{"$cond":{{"if":{{"$eq":[{{"$ifNull":["$GLT_history_runID",""]}}, ""]}}, "then":[], "else":"$GLT_history_runID"}}}}]}}  \
                                                                 ,"exceptionID": {{"$toString": "$_id"}}\
-                                                                ,"FILENAME":"$$new.FILENAME"\
-																,"GLT_CREATED_ON":"$$new.GLT_CREATED_ON"\
                                                                 ,"SLCOST":"$$new.SLCOST"\
                                                                 ,"GLCOST":"$$new.GLCOST"\
                                                                 ,"RECON":"$$new.RECON"\
@@ -406,6 +446,8 @@ AG_PIPELINE_FIN08_AP_AR_1_4 = '[{{"$match": {{"runID": {{"$eq": "{run_id}"}}\
 													 {{"$addFields":\
 																{{"GLT_lastUpdatedDateTime": "$$new.GLT_lastUpdatedDateTime"\
                                                                 ,"runID": "$$new.runID"\
+                                                                ,"FILENAME":"$$new.FILENAME"\
+																,"GLT_CREATED_ON":"$$new.GLT_CREATED_ON"\
                                                                 ,"GLT_do_auto_close":{{"$cond":{{"if":{{"$eq":["$$new.IMDIF", "X"]}}, "then":True, "else":False}}}}\
                                                                 ,"GLT_do_auto_reopen":False\
 																,"GLT_history_runID": {{"$concatArrays":["$$new.GLT_history_runID", {{"$cond":{{"if":{{"$eq":[{{"$ifNull":["$GLT_history_runID",""]}}, ""]}}, "then":[], "else":"$GLT_history_runID"}}}}]}}\
