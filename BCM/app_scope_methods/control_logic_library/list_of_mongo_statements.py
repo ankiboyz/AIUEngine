@@ -301,8 +301,9 @@ AG_PIPELINE_FIN08_FA_1_3 = '[{{"$match": {{"runID": {{"$eq": "{run_id}" }}\
 						  ]'
 
 AG_PIPELINE_FIN08_FA_1_4 = '[{{"$match": {{"runID": {{"$eq": "{run_id}"}},\
-									 "GLT_is_this_realized": "IN-PROCESS"}}}}\
-						 ,{{"$project": {{"_id": 0, "GLT_is_this_realized": 0\
+									 "GLT_is_this_realized": "IN-PROCESS"\
+                                    ,"GLT_do_discard": False}}}}\
+                            ,{{"$project": {{"_id": 0, "GLT_is_this_realized": 0\
                                        ,"GLT_do_exception_exist": 0, "GLT_do_discard":0\
                                        ,"GLT_history_exceptions_match":0, "GLT_exception_status":0}}}}\
 						 ,{{"$addFields" : {{\
