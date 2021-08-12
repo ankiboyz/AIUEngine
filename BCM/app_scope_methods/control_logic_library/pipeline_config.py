@@ -270,26 +270,36 @@ PIPELINE = {'TFA02_IFA19_1':
                                                              , method_name='method_tre07_4')
                          },
                         {"ID": "STAGE5"
+                         , "STAGE": Stage(name="DELETE_FRESH_CLEARED_ITEMS"
+                                          , description="This stage deletes the documents in the Exception collection"
+                                                        "which are Cleared Line Items without any matching Open line items"
+                                          , stage_type='processing'
+                                          , proceed_to='STAGE6')
+                         , "STAGE_PROCESSOR": StageProcessor(path_to_module='BCM.app_scope_methods'
+                                                                            '.control_logic_library.control_TRE07'
+                                                             , method_name='method_tre07_5')
+                         },
+                        {"ID": "STAGE6"
                          , "STAGE": Stage(name="ADDITIONAL_PROCESSING"
                                           , description="This stage does additional processing on the records in the"
                                                         "Exception collection eg updating the exceptionID for the index"
                                           , stage_type='processing'
-                                          , proceed_to='STAGE6')
+                                          , proceed_to='STAGE7')
                          , "STAGE_PROCESSOR": StageProcessor(path_to_module='BCM.app_scope_methods'
-                                                                            '.control_logic_library.benevolent_methods'
-                                                             , method_name='filling_up_exceptionId_in_exception_collection')
+                                                                            '.control_logic_library.control_TRE07'
+                                                             , method_name='method_tre07_6')
                          },
-                        {"ID": "STAGE6"
+                        {"ID": "STAGE7"
                          , "STAGE": Stage(name="FLAG_POSTS_CONQUERED"
                                           , description="This stage marks the recs in function collection, those have "
                                                         "been processed."
                                           , stage_type='processing'
-                                          , proceed_to='STAGE7')
+                                          , proceed_to='STAGE8')
                          , "STAGE_PROCESSOR": StageProcessor(path_to_module='BCM.app_scope_methods'
                                                                             '.control_logic_library.benevolent_methods'
                                                              , method_name='flag_recs_in_function_collection_as_processed')
                          },
-                        {"ID": "STAGE7"
+                        {"ID": "STAGE8"
                          , "STAGE": Stage(name="WHETHER_ALL_DONE"
                                                , description="This stage checks whether all the records in "
                                                              "the function collection have been processed"
@@ -297,18 +307,18 @@ PIPELINE = {'TFA02_IFA19_1':
                                                # Probably all being done fine so go to STAGE2 instead of STAGE1;
                                                # On 2nd thoughts make it go to STAGE1 only as False could have been
                                                # as a result of Failure in logic execution.
-                                               , proceed_to={'yes_ID': 'STAGE8', 'no_ID': 'STAGE1'})
+                                               , proceed_to={'yes_ID': 'STAGE9', 'no_ID': 'STAGE1'})
                          , "STAGE_PROCESSOR": StageProcessor(path_to_module='BCM.app_scope_methods'
                                                                             '.control_logic_library.benevolent_methods'
                                                              , method_name='whether_all_function_recs_done_decisional_node')
                          },
-                        {"ID": "STAGE8"
+                        {"ID": "STAGE9"
                          , "STAGE": Stage(name="SIGNALING_EXIT"
                                           , description="This stage of this pipeline is to signal the EXIT"
                                           , stage_type='processing'
                                           , proceed_to='EXIT')
                          , "STAGE_PROCESSOR": StageProcessor(path_to_module='BCM.app_scope_methods'
-                                                                            '.control_logic_library.control_TFA02_IFA19_SC7'
+                                                                            '.control_logic_library.control_TRE07'
                                                              , method_name='')
                          },
                         # {"ID": "STAGE9"

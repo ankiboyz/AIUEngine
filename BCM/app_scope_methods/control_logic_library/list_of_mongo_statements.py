@@ -6,19 +6,19 @@ executor where these commands are executed.
 IN order to prepare these statements so that they are resolved as f-strings during runtime, following needs to be done:
 Follow it in the below sequence only:
 1. first create an aggregation pipeline using pymongo.
-2. Ensure inside the pipeline all " double quotes are used and no single quotes are used; single quotes will be used to enclose entire thing from outside.
+2. Do not put any comments in the pipeline. It is recommended to Ctrl+F the occurrences of # and remove them.
+3. Ensure inside the pipeline all " double quotes are used and no single quotes are used; single quotes will be used to enclose entire thing from outside.
    It's recommended to Ctrl+F the single quote - to be firmly sure there is no single quote.
-3. All the new line spaces are put in with backslash '\' (back-slash to put there without single quotes);
+4. All the new line spaces are put in with backslash '\' (back-slash to put there without single quotes);
 so that the multi-line is signalled.
-4.In notepad++ Replace all { with {{
-5. In notepad++ Replace all } with }}
-6.Put curly braces covering the dynamic variable values to be resolved via f-strings during dynamic execution in
+5.In notepad++ Replace all { with {{
+6. In notepad++ Replace all } with }}
+7.Put curly braces covering the dynamic variable values to be resolved via f-strings during dynamic execution in
 the caller e.g. run_id , function_id as {run_id} and {function_id}.
-7. It needs to be ensured that the dynamic variables i.e. those put under curly braces as of step 6 need to be resolved from the code.
-8. Do not place any braces for the functions whose value need be resolved when the actual call happens eg datetime.datetime.utcnow().
-9. Put string quotes before and after string values those will be resolved after f-string conversion eg as "{run_id}", "{function_id}"
+8. It needs to be ensured that the dynamic variables i.e. those put under curly braces as of step 6 need to be resolved from the code.
+9. Do not place any braces for the functions whose value need be resolved when the actual call happens eg datetime.datetime.utcnow().
+10. Put string quotes before and after string values those will be resolved after f-string conversion eg as "{run_id}", "{function_id}"
 here, the values that need to be resolved as numeric eg limit_for_recs_processing_in_one_iteration should not be enclosed in double quotes ""
-10. Do not put any comments in the pipeline. It is recommended to Ctrl+F the occurrences of #.
 11. Include the pipeline code as mentioned here between [].
 12. The value of the pipeline variable here eg AG_PIPELINE_TFA02_IFA19_1_3 is enclosed within single quotes '' as shown below '[....]'.
 '''
@@ -180,6 +180,7 @@ AG_PIPELINE_TRE07_1_4 = '[{{"$match": {{"runID": {{"$eq": "{run_id}"}},\
                                          , "reason_code":""\
                                          , "GLT_do_auto_close": False\
                                          , "GLT_do_auto_reopen": False\
+                                         , "GLT_is_this_fresh": True\
                                          }} \
                           }}\
                          ,{{"$merge" : {{ "into": "{exception_collection_name}"\
@@ -189,7 +190,6 @@ AG_PIPELINE_TRE07_1_4 = '[{{"$match": {{"runID": {{"$eq": "{run_id}"}},\
                                                                 {{"GLT_lastUpdatedDateTime": "$$new.GLT_lastUpdatedDateTime"\
                                                                 ,"runID": "$$new.runID"\
                                                                 ,"FILENAME":"$$new.FILENAME"\
-																,"GLT_CREATED_ON":"$$new.GLT_CREATED_ON"\
                                                                 ,"GLT_do_auto_close":{{"$cond":{{"if":{{"$eq":["$$new.EXP_STATUS", "Cleared Item"]}}, "then":True, "else":False}}}}\
                                                                 ,"GLT_do_auto_reopen":{{"$cond":{{"if":{{"$and":[{{"$eq":["$$new.EXP_STATUS", "Open Item"]}},{{"$eq":["$status", "Closed"]}}]}}, "then":True, "else":False}}}}\
                                                                 ,"GLT_history_runID": {{"$concatArrays":["$$new.GLT_history_runID", {{"$cond":{{"if":{{"$eq":[{{"$ifNull":["$GLT_history_runID",""]}}, ""]}}, "then":[], "else":"$GLT_history_runID"}}}}]}}\
@@ -197,6 +197,8 @@ AG_PIPELINE_TRE07_1_4 = '[{{"$match": {{"runID": {{"$eq": "{run_id}"}},\
 																,"XOPVW":"$$new.XOPVW"\
 																,"AGE":"$$new.AGE"\
 																,"EXP_STATUS":"$$new.EXP_STATUS"\
+                                                                ,"AUGDT":"$$new.AUGDT"\
+                                                                ,"AUGBL":"$$new.AUGBL"\
 																,"XSTOV":"$$new.XSTOV"\
 																,"XREVERSAL":"$$new.XREVERSAL"\
 																,"XRAGL":"$$new.XRAGL"\
@@ -205,6 +207,10 @@ AG_PIPELINE_TRE07_1_4 = '[{{"$match": {{"runID": {{"$eq": "{run_id}"}},\
 																,"SGTXT":"$$new.SGTXT"\
 																,"RATING":"$$new.RATING"\
 																,"BLART":"$$new.BLART"\
+																,"XBLNR":"$$new.XBLNR"\
+																,"USNAM":"$$new.USNAM"\
+																,"CPUDT":"$$new.CPUDT"\
+																,"CPUTM":"$$new.CPUTM"\
                                                                 }}\
                                                      }}\
                                                     ]\
@@ -323,7 +329,6 @@ AG_PIPELINE_FIN08_FA_1_4 = '[{{"$match": {{"runID": {{"$eq": "{run_id}"}},\
 																{{"GLT_lastUpdatedDateTime": "$$new.GLT_lastUpdatedDateTime"\
                                                                 ,"runID": "$$new.runID"\
                                                                 ,"FILENAME":"$$new.FILENAME"\
-																,"GLT_CREATED_ON":"$$new.GLT_CREATED_ON"\
                                                                 ,"GLT_do_auto_close":"$$new.GLT_do_auto_close"  \
                                                                 ,"GLT_do_auto_reopen":False \
 																,"GLT_history_runID": {{"$concatArrays":["$$new.GLT_history_runID", {{"$cond":{{"if":{{"$eq":[{{"$ifNull":["$GLT_history_runID",""]}}, ""]}}, "then":[], "else":"$GLT_history_runID"}}}}]}}  \
@@ -453,24 +458,24 @@ AG_PIPELINE_FIN08_AP_AR_1_4 = '[{{"$match": {{"runID": {{"$eq": "{run_id}"}}\
                                                                 ,"GLT_do_auto_reopen":False\
 																,"GLT_history_runID": {{"$concatArrays":["$$new.GLT_history_runID", {{"$cond":{{"if":{{"$eq":[{{"$ifNull":["$GLT_history_runID",""]}}, ""]}}, "then":[], "else":"$GLT_history_runID"}}}}]}}\
                                                                 ,"exceptionID": {{"$toString": "$_id"}}\
-                                                                ,"BPTYPE"	:"$$new.BPTYPE"\
-                                                                ,"BPTYP1"	:"$$new.BPTYP1"\
-                                                                ,"RSKL1"	:"$$new.RSKL1"\
-                                                                ,"IMDIF"	:"$$new.IMDIF"\
-                                                                ,"DMBTR4"	:"$$new.DMBTR4"\
-                                                                ,"DMBTR1"	:"$$new.DMBTR1"\
-                                                                ,"DMBTR2"	:"$$new.DMBTR2"\
-                                                                ,"DMBTR3"	:"$$new.DMBTR3"\
-                                                                ,"ZUONR"	:"$$new.ZUONR"\
-                                                                ,"SGTXT"	:"$$new.SGTXT"\
-                                                                ,"GSBER"	:"$$new.GSBER"\
-                                                                ,"PRCTR"	:"$$new.PRCTR"\
-                                                                ,"WERKS"	:"$$new.WERKS"\
-                                                                ,"NAME1"	:"$$new.NAME1"\
-                                                                ,"NAME2"	:"$$new.NAME2"\
-                                                                ,"REF_CPUDT"	:"$$new.REF_CPUDT"\
-                                                                ,"REF_CPUTM"	:"$$new.REF_CPUTM"\
-                                                                ,"3N_LINE_DIFF"	:"$$new.3N_LINE_DIFF"\
+                                                                ,"BPTYPE":"$$new.BPTYPE"\
+                                                                ,"BPTYP1":"$$new.BPTYP1"\
+                                                                ,"RSKL1":"$$new.RSKL1"\
+                                                                ,"IMDIF":"$$new.IMDIF"\
+                                                                ,"DMBTR4":"$$new.DMBTR4"\
+                                                                ,"DMBTR1":"$$new.DMBTR1"\
+                                                                ,"DMBTR2":"$$new.DMBTR2"\
+                                                                ,"DMBTR3":"$$new.DMBTR3"\
+                                                                ,"ZUONR":"$$new.ZUONR"\
+                                                                ,"SGTXT":"$$new.SGTXT"\
+                                                                ,"GSBER":"$$new.GSBER"\
+                                                                ,"PRCTR":"$$new.PRCTR"\
+                                                                ,"WERKS":"$$new.WERKS"\
+                                                                ,"NAME1":"$$new.NAME1"\
+                                                                ,"NAME2":"$$new.NAME2"\
+                                                                ,"REF_CPUDT":"$$new.REF_CPUDT"\
+                                                                ,"REF_CPUTM":"$$new.REF_CPUTM"\
+                                                                ,"3N_LINE_DIFF":"$$new.3N_LINE_DIFF"\
                                                                 ,"BPCLASS":"$$new.BPCLASS"\
                                                                 ,"RATING":"$$new.RATING"\
                                                                 }}\

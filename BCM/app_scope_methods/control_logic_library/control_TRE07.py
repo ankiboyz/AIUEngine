@@ -120,3 +120,146 @@ def method_tre07_4(appln_cntxt, db_session, mongo_client, control_params_dict):
 
     finally:
         return stg_op_response_obj.method_op_dict
+
+def method_tre07_5(appln_cntxt, db_session, mongo_client, control_params_dict):
+    ''' This method is used to work as Stage 5 for this control.
+     Here we delete the fresh exceptions but having the EXP_STATUS as "Cleared Item" '''
+
+    logger.info(f' Executing the control library with args {control_params_dict} ')
+
+    stg_op_response_obj = structured_response.StageOutputResponseDict()
+
+    # with db_session.begin():    #Not needed in the methods now taken care at the pipeline execution side to put in additional details for committing to DB if needed
+    #     pass
+
+    # # Setting transiently for now. These are already set in the set_controls_param dict now
+    # control_params_dict["FUNCTION_ID"] = 'TFA02_COPY'
+    # control_params_dict["RUN_ID"] = '1b90f9d5-094d-4816-a8a8-8ddf04247486-1622726323002'
+
+    try:
+        # this will get the database from the URI string
+        db_from_uri_string = mongo_client.get_database()
+
+        # Add informatives to the DETAIL_SECTION
+        stg_op_response_obj.add_to_detail_section_dict('DATABASE_NAME', db_from_uri_string.name
+                                                       , 'This is the Mongo DB connected for this stage' )
+
+        # getting the function collection to operate upon, not needed for this stage
+        # function_id = control_params_dict["FUNCTION_ID"]
+        # stg_op_response_obj.add_to_detail_section_dict('FUNCTION_COLLECTION', function_id
+        #                                              , 'This is the Mongo DB collection operated upon for this stage')
+
+        # Getting the exception collection name
+        exception_collection_name = control_params_dict['EXCEPTION_COLLECTION_NAME']
+        # Add informatives to the DETAIL_SECTION
+        stg_op_response_obj.add_to_detail_section_dict('EXCEPTION_COLLECTION_NAME', exception_collection_name
+                                                       ,
+                                                       'This is the exception_collection_name for this control, in one run')
+        # getting the RunId
+        run_id = control_params_dict["RUN_ID"]
+        stg_op_response_obj.add_to_detail_section_dict('RUN_ID', run_id
+                                                       , 'This is the runID passed for this stage execution')
+
+        start_time = time.time()
+        # Execute the Pipeline Code
+        result_from_delete = db_from_uri_string[exception_collection_name]\
+            .delete_many({"runID": run_id, "GLT_is_this_fresh": True, "EXP_STATUS": "Cleared Item"})
+
+        stg_op_response_obj.add_to_detail_section_dict('RESULT_FROM_OPERATION', 'DELETE_MANY'
+                                                       , f'deleted count = {result_from_delete.deleted_count} '
+                                                       )
+        end_time = time.time()
+
+        mongo_code_execution_time = end_time - start_time
+        stg_op_response_obj.add_to_detail_section_dict('MONGO_CODE_EXECUTION_TIME', mongo_code_execution_time
+                                                       , 'This is the mongo code execution time')
+
+        stg_op_response_obj.add_to_status(1)    # 1 denotes SUCCESS
+        stg_op_response_obj.add_to_status_comments('executed_successfully')
+
+        logger.debug(f' As a result of the operation of the method on the input parameters {control_params_dict} '
+                     f'following is the response output {stg_op_response_obj.method_op_dict}')
+
+    except Exception as error:
+        logger.error(f'Error encountered while executing method having input params as {control_params_dict} '
+                     f'error being {error}', exc_info=True)
+
+        stg_op_response_obj.add_to_status(0)    # 0 denotes Failure
+        stg_op_response_obj.add_to_status_comments(str(error))
+
+    finally:
+        return stg_op_response_obj.method_op_dict
+
+def method_tre07_6(appln_cntxt, db_session, mongo_client, control_params_dict):
+    ''' This method is used to work as Stage 5 for the control.
+     Additional Processing over the prepared Exceptions '''
+
+    logger.info(f' Executing the control library with args {control_params_dict} ')
+
+    stg_op_response_obj = structured_response.StageOutputResponseDict()
+
+    # with db_session.begin():    #Not needed in the methods now taken care at the pipeline execution side to put in additional details for committing to DB if needed
+    #     pass
+
+    # # Setting transiently for now. These are already set in the set_controls_param dict now
+    # control_params_dict["FUNCTION_ID"] = 'TFA02_COPY'
+    # control_params_dict["RUN_ID"] = '1b90f9d5-094d-4816-a8a8-8ddf04247486-1622726323002'
+
+    try:
+        # this will get the database from the URI string
+        db_from_uri_string = mongo_client.get_database()
+
+        # Add informatives to the DETAIL_SECTION
+        stg_op_response_obj.add_to_detail_section_dict('DATABASE_NAME', db_from_uri_string.name
+                                                       , 'This is the Mongo DB connected for this stage' )
+
+        # getting the function collection to operate upon, not needed for this stage
+        # function_id = control_params_dict["FUNCTION_ID"]
+        # stg_op_response_obj.add_to_detail_section_dict('FUNCTION_COLLECTION', function_id
+        #                                              , 'This is the Mongo DB collection operated upon for this stage')
+
+        # Getting the exception collection name
+        exception_collection_name = control_params_dict['EXCEPTION_COLLECTION_NAME']
+        # Add informatives to the DETAIL_SECTION
+        stg_op_response_obj.add_to_detail_section_dict('EXCEPTION_COLLECTION_NAME', exception_collection_name
+                                                       ,
+                                                       'This is the exception_collection_name for this control, in one run')
+        # getting the RunId
+        run_id = control_params_dict["RUN_ID"]
+        stg_op_response_obj.add_to_detail_section_dict('RUN_ID', run_id
+                                                       , 'This is the runID passed for this stage execution')
+
+        start_time = time.time()
+        # Execute the Pipeline Code
+        result_from_update = db_from_uri_string[exception_collection_name]\
+            .update_many({"runID": {"$eq": run_id}, "exceptionID": ""},
+                         [{"$set": {"exceptionID": {"$toString": "$_id"}}}
+                             , {"$set": {"GLT_is_this_fresh": False}}
+                          ]
+                         )
+
+        stg_op_response_obj.add_to_detail_section_dict('RESULT_FROM_OPERATION', 'UPDATE_MANY'
+                                                       , f'modified count = {result_from_update.modified_count} '
+                                                         f'matched count =  {result_from_update.matched_count} '
+                                                       )
+        end_time = time.time()
+
+        mongo_code_execution_time = end_time - start_time
+        stg_op_response_obj.add_to_detail_section_dict('MONGO_CODE_EXECUTION_TIME', mongo_code_execution_time
+                                                       , 'This is the mongo code execution time')
+
+        stg_op_response_obj.add_to_status(1)    # 1 denotes SUCCESS
+        stg_op_response_obj.add_to_status_comments('executed_successfully')
+
+        logger.debug(f' As a result of the operation of the method on the input parameters {control_params_dict} '
+                     f'following is the response output {stg_op_response_obj.method_op_dict}')
+
+    except Exception as error:
+        logger.error(f'Error encountered while executing method having input params as {control_params_dict} '
+                     f'error being {error}', exc_info=True)
+
+        stg_op_response_obj.add_to_status(0)    # 0 denotes Failure
+        stg_op_response_obj.add_to_status_comments(str(error))
+
+    finally:
+        return stg_op_response_obj.method_op_dict

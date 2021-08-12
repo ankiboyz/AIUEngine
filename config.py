@@ -34,7 +34,7 @@ PORT = '50008'
 # for prod keep it as 'config.ProductionConfig'
 # 'config.TestingConfig'
 # For current testing keeping it as 'config.StagingConfig'
-APP_CONFIG_MODE = 'config.StagingConfig'
+APP_CONFIG_MODE = 'config.DevelopmentConfig'
 
 '''All Configurations here DB as well as Logging based on the environment'''
 
@@ -178,9 +178,9 @@ class DevelopmentConfig(Config):
     DEBUG = True
     SQLALCHEMY_ECHO = True
 
-    WHETHER_SUBMIT_TO_KAFKA = True
+    WHETHER_SUBMIT_TO_KAFKA = False
     MAX_NUM_OF_CONSUMERS_AT_ONE_TIME = 5
-    MAX_NUM_OF_THREADS_AT_ONE_TIME = 1
+    MAX_NUM_OF_THREADS_AT_ONE_TIME = 5
 
 class StagingConfig(Config):
     DEVELOPMENT = True
