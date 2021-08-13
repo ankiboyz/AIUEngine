@@ -92,7 +92,6 @@ AG_PIPELINE_TFA02_IFA19_1_4 = '[{{"$match": {{"runID": {{"$eq": "{run_id}"}},\
                                                                     {{"GLT_lastUpdatedDateTime": "$$new.GLT_lastUpdatedDateTime"\
                                                                     ,"runID": "$$new.runID"\
 																	,"FILENAME":"$$new.FILENAME"\
-																	,"GLT_CREATED_ON":"$$new.GLT_CREATED_ON"\
                                                                     ,"GLT_do_auto_close":"$$new.GLT_do_auto_close"\
                                                                     ,"GLT_whether_S2A": "$$new.GLT_whether_S2A"\
                                                                     ,"GLT_history_runID": {{"$concatArrays":["$$new.GLT_history_runID", {{"$cond":{{"if":{{"$eq":[{{"$ifNull":["$GLT_history_runID",""]}}, ""]}}, "then":[], "else":"$GLT_history_runID"}}}}]}}\
@@ -342,7 +341,7 @@ AG_PIPELINE_FIN08_FA_1_4 = '[{{"$match": {{"runID": {{"$eq": "{run_id}"}},\
                                                                 ,"ASSET_ACUM_DEP":"$$new.ASSET_ACUM_DEP"\
                                                                 ,"ACUM_RECON_DIFF":"$$new.ACUM_RECON_DIFF"\
                                                                 ,"E_ACUM_RECON_DIFF":"$$new.E_ACUM_RECON_DIFF"\
-                                                                ,"E_GL_RECON_DIFF":"$$new.E_GL_RECON_DIFF"\
+                                                                ,"E_GL_RCON_DIFF":"$$new.E_GL_RCON_DIFF"\
                                                                 ,"RATING":"$$new.RATING"\
                                                                 ,"IMDIF":"$$new.IMDIF"\
                                                                 }}\
@@ -453,7 +452,6 @@ AG_PIPELINE_FIN08_AP_AR_1_4 = '[{{"$match": {{"runID": {{"$eq": "{run_id}"}}\
 																{{"GLT_lastUpdatedDateTime": "$$new.GLT_lastUpdatedDateTime"\
                                                                 ,"runID": "$$new.runID"\
                                                                 ,"FILENAME":"$$new.FILENAME"\
-																,"GLT_CREATED_ON":"$$new.GLT_CREATED_ON"\
                                                                 ,"GLT_do_auto_close":{{"$cond":{{"if":{{"$eq":["$$new.IMDIF", "X"]}}, "then":True, "else":False}}}}\
                                                                 ,"GLT_do_auto_reopen":False\
 																,"GLT_history_runID": {{"$concatArrays":["$$new.GLT_history_runID", {{"$cond":{{"if":{{"$eq":[{{"$ifNull":["$GLT_history_runID",""]}}, ""]}}, "then":[], "else":"$GLT_history_runID"}}}}]}}\
