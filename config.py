@@ -57,7 +57,8 @@ class Config(object):
     # list of controls to be undertaken by this APP.
     # WORD OF CAUTION: Kindly ensure the list of controls entered are all Unique!
     # At every restart of the APP the list of controls is inserted into the DB for the specific EngineID
-    LIST_OF_CONTROLS = ['PAY05', 'TFA02_IFA19_1', 'TFA02_IFA19_SC7_1', 'TRE07_1', 'TFA02_IFA19_1', 'FIN08_FA_1', 'FIN08_AP_AR_1']
+    LIST_OF_CONTROLS = ['PAY05', 'TFA02_IFA19_1', 'TFA02_IFA19_SC7_1', 'TRE07_1', 'TFA02_IFA19_1', 'FIN08_FA_1', 'FIN08_AP_AR_1'
+        , 'FIN08_INVENTORY_1']
 
     # This is the maximum limit of the records to be processed in one iteration in MONGO for a control.
     # This is maintained in the control metadata now.

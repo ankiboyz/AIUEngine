@@ -482,3 +482,138 @@ AG_PIPELINE_FIN08_AP_AR_1_4 = '[{{"$match": {{"runID": {{"$eq": "{run_id}"}}\
 									  , "whenNotMatched": "insert" }}\
 						  }}\
 						  ]'
+
+AG_PIPELINE_FIN08_INVENTORY_1_3 = '[{{"$match": {{"runID": {{"$eq": "{run_id}" }}\
+                                                                 ,"GLT_is_this_realized": {{"$ne": "DONE"}} \
+                                                                }}\
+                                                     }}, \
+						  {{"$limit": {limit_for_recs_processing_in_one_iteration}}}\
+						 ,{{"$addFields" : {{"GLT_lastUpdatedDateTime": datetime.datetime.utcnow()\
+										 , "GLT_is_this_realized": "IN-PROCESS"	 \
+										  }}\
+						  }}\
+                         ,{{"$lookup": \
+                           {{\
+                               "from":"{exception_collection_name}"\
+                              , "let": {{"foreignField":"$COMPOSITEKEY"}}\
+                              ,"pipeline": [\
+                                              {{"$match": \
+                                               {{"$expr":\
+                                                   {{ "$eq": [ "$COMPOSITEKEY",  "$$foreignField" ] }}\
+                                               }}\
+                                              }}\
+                                             ,{{"$sort" : {{"GLT_incremental_number": -1}}}}                         \
+                                           ]\
+                              ,"as": "matched_existing_exception"\
+                           }}\
+                          }},\
+                          {{"$addFields":{{"firstelem":{{"$first":"$matched_existing_exception"}}}}\
+                            }},\
+                          {{"$addFields":{{"GLT_exception_status":"$firstelem.status",\
+                                         "GLT_incremental_number":{{"$ifNull":["$firstelem.GLT_incremental_number",1]}} \
+                                        }}\
+                          }},\
+                          {{"$addFields":{{\
+                                          "GLT_do_exception_exist":{{"$cond":\
+                                                                    {{"if":{{\
+                                                                        "$eq":[{{"$ifNull":["$GLT_exception_status","X"]}}, "X"]\
+                                                                          }}, \
+                                                                     "then":\
+                                                                         False,\
+                                                                     "else":\
+                                                                         True\
+                                                                    }}\
+                                                                   }}\
+                          }}}},\
+                          {{"$addFields":{{\
+                                          "GLT_incremental_number":{{"$cond":\
+                                                                    {{"if":{{"$and":[{{"$eq":["$GLT_do_exception_exist",True]}},{{"$eq":["$GLT_exception_status","Closed"]}}]}}, \
+                                                                     "then":\
+                                                                         {{"$add":["$GLT_incremental_number",1]}}, \
+                                                                     "else":\
+                                                                         "$GLT_incremental_number" \
+                                                                    }}\
+                                                                   }}\
+                          }}}},\
+                           {{"$addFields":{{ \
+                                         "GLT_do_discard":{{"$and":\
+                                                           [{{"$eq":["$IMDIF","X"]}},\
+                                                            {{"$or":[{{"$eq":["$GLT_exception_status","Closed"]}},{{"$eq":["$GLT_do_exception_exist",False]}}]}}\
+                                                           ]\
+                                                          }}                                             \
+                                         }}                              \
+                            }},\
+                         {{"$addFields":{{\
+                          "GLT_history_exceptions_match" : {{"$concatArrays":[[{{"exceptionID": "$firstelem.exceptionID"\
+                                                                             , "GLT_lastUpdatedDateTime": "$GLT_lastUpdatedDateTime"\
+                                                                             , "COMPOSITEKEY": "$firstelem.COMPOSITEKEY"\
+                                                                             , "GLT_incremental_number": "$firstelem.GLT_incremental_number"\
+                                                                             , "exception_runID": "$firstelem.runID"\
+                                                                             , "function_runID": "$runID"\
+                                                                            }}]\
+                                                                           ,{{"$cond":{{"if":{{"$eq":[{{"$ifNull":["$GLT_history_exceptions_match",""]}}, ""]}}, "then":[], "else":"$GLT_history_exceptions_match"}}}}]\
+                                              }}\
+                        \
+                         }}}},\
+                          {{"$project": {{"firstelem":0, "matched_existing_exception":0}}}}\
+						 ,{{"$merge" : {{ "into": "{function_id}"\
+									  , "on": "_id" \
+									  , "whenMatched":[ \
+													 {{"$addFields":\
+																{{"GLT_lastUpdatedDateTime": "$$new.GLT_lastUpdatedDateTime"\
+																,"GLT_is_this_realized": "$$new.GLT_is_this_realized"\
+                                                                ,"GLT_history_exceptions_match": "$$new.GLT_history_exceptions_match"\
+                                                                ,"GLT_exception_status": "$$new.GLT_exception_status"\
+                                                                ,"GLT_do_exception_exist": "$$new.GLT_do_exception_exist"\
+                                                                ,"GLT_do_discard": "$$new.GLT_do_discard"\
+                                                                ,"GLT_incremental_number": "$$new.GLT_incremental_number"\
+																}}\
+													 }}\
+													]													\
+									  , "whenNotMatched": "discard" }} \
+						  }},\
+						  ]'
+
+AG_PIPELINE_FIN08_INVENTORY_1_4 = '[{{"$match": {{"runID": {{"$eq": "{run_id}"}},\
+									 "GLT_is_this_realized": "IN-PROCESS"\
+                                    ,"GLT_do_discard": False}}}}\
+						 ,{{"$project": {{"_id": 0, "GLT_is_this_realized": 0\
+                                       ,"GLT_do_exception_exist": 0, "GLT_do_discard":0\
+                                       ,"GLT_history_exceptions_match":0, "GLT_exception_status":0}}}}	\
+						 ,{{"$addFields" : {{\
+                                           "status": "Unassigned"	\
+										 , "control_id": "{control_id}"\
+										 , "GLT_history_runID" : {{"$concatArrays":[[{{"runID": "$runID", "GLT_lastUpdatedDateTime": "$GLT_lastUpdatedDateTime"}}],{{"$cond":{{"if":{{"$eq":[{{"$ifNull":["$GLT_history_runID",""]}}, ""]}}, "then":[], "else":"$GLT_history_runID"}}}}]}}	\
+										 , "exceptionID" : "" \
+										 , "reason_code": ""  \
+                                         , "GLT_do_auto_close": {{"$cond":{{"if":{{"$eq":["$IMDIF", "X"]}}, "then":True, "else":False}}}}\
+                                         , "GLT_do_auto_reopen": False  \
+										 }} \
+						  }}\
+						 ,{{"$merge" : {{ "into": "{exception_collection_name}"\
+									  , "on": ["COMPOSITEKEY", "GLT_incremental_number"] \
+									  , "whenMatched":[ \
+													 {{"$addFields":\
+																{{"GLT_lastUpdatedDateTime": "$$new.GLT_lastUpdatedDateTime"\
+                                                                ,"runID": "$$new.runID"\
+                                                                ,"FILENAME":"$$new.FILENAME"\
+                                                                ,"GLT_do_auto_close":"$$new.GLT_do_auto_close"  \
+                                                                ,"GLT_do_auto_reopen":False \
+																,"GLT_history_runID": {{"$concatArrays":["$$new.GLT_history_runID", {{"$cond":{{"if":{{"$eq":[{{"$ifNull":["$GLT_history_runID",""]}}, ""]}}, "then":[], "else":"$GLT_history_runID"}}}}]}} \
+                                                                ,"exceptionID": {{"$toString": "$_id"}}  \
+                                                                ,"SALK3":"$$new.SALK3"\
+                                                                ,"IMDIF":"$$new.IMDIF"\
+                                                                ,"DMBTR1":"$$new.DMBTR1"\
+                                                                ,"DMBTR2":"$$new.DMBTR2"\
+                                                                ,"DMBTR3":"$$new.DMBTR3"\
+                                                                ,"DMBTR4":"$$new.DMBTR4"\
+                                                                ,"LBKUM":"$$new.LBKUM"\
+                                                                ,"MEINS":"$$new.MEINS"\
+                                                                ,"MEC1":"$$new.MEC1"\
+                                                                ,"RATING":"$$new.RATING"\
+                                                                }}\
+													 }}\
+													]	\
+									  , "whenNotMatched": "insert"}} \
+						  }}\
+						  ]'
