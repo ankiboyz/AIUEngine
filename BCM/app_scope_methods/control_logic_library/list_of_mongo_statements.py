@@ -458,22 +458,11 @@ AG_PIPELINE_FIN08_AP_AR_1_4 = '[{{"$match": {{"runID": {{"$eq": "{run_id}"}}\
                                                                 ,"exceptionID": {{"$toString": "$_id"}}\
                                                                 ,"BPTYPE":"$$new.BPTYPE"\
                                                                 ,"BPTYP1":"$$new.BPTYP1"\
-                                                                ,"RSKL1":"$$new.RSKL1"\
                                                                 ,"IMDIF":"$$new.IMDIF"\
                                                                 ,"DMBTR4":"$$new.DMBTR4"\
                                                                 ,"DMBTR1":"$$new.DMBTR1"\
-                                                                ,"DMBTR2":"$$new.DMBTR2"\
+                                                                ,"FS10N":"$$new.FS10N"\
                                                                 ,"DMBTR3":"$$new.DMBTR3"\
-                                                                ,"ZUONR":"$$new.ZUONR"\
-                                                                ,"SGTXT":"$$new.SGTXT"\
-                                                                ,"GSBER":"$$new.GSBER"\
-                                                                ,"PRCTR":"$$new.PRCTR"\
-                                                                ,"WERKS":"$$new.WERKS"\
-                                                                ,"NAME1":"$$new.NAME1"\
-                                                                ,"NAME2":"$$new.NAME2"\
-                                                                ,"REF_CPUDT":"$$new.REF_CPUDT"\
-                                                                ,"REF_CPUTM":"$$new.REF_CPUTM"\
-                                                                ,"3N_LINE_DIFF":"$$new.3N_LINE_DIFF"\
                                                                 ,"BPCLASS":"$$new.BPCLASS"\
                                                                 ,"RATING":"$$new.RATING"\
                                                                 }}\
