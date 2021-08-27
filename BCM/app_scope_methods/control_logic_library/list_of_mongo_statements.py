@@ -18,7 +18,7 @@ the caller e.g. run_id , function_id as {run_id} and {function_id}.
 8. It needs to be ensured that the dynamic variables i.e. those put under curly braces as of step 6 need to be resolved from the code.
 9. Do not place any braces for the functions whose value need be resolved when the actual call happens eg datetime.datetime.utcnow().
 10. Put string quotes before and after string values those will be resolved after f-string conversion eg as "{run_id}", "{function_id}"
-here, the values that need to be resolved as numeric eg limit_for_recs_processing_in_one_iteration should not be enclosed in double quotes ""
+here, the values that need to be resolved as NUMERIC eg limit_for_recs_processing_in_one_iteration should NOT be enclosed in double quotes ""
 11. Include the pipeline code as mentioned here between [].
 12. The value of the pipeline variable here eg AG_PIPELINE_TFA02_IFA19_1_3 is enclosed within single quotes '' as shown below '[....]'.
 '''
@@ -353,10 +353,10 @@ AG_PIPELINE_FIN08_FA_1_4 = '[{{"$match": {{"runID": {{"$eq": "{run_id}"}},\
 
 AG_PIPELINE_FIN08_AP_AR_1_3 = '[{{"$match": {{"runID": {{"$eq": "{run_id}"}},\
 									 "GLT_is_this_realized":  {{"$ne": "DONE"}}}}\
-                                    }}\
-                         ,{{"$limit": limit_for_recs_processing_in_one_iteration}}\
+                                                    }}\
+                         ,{{"$limit": {limit_for_recs_processing_in_one_iteration}}}\
 						 ,{{"$addFields" : {{"GLT_lastUpdatedDateTime": datetime.datetime.utcnow()\
-										 , "GLT_is_this_realized": "IN-PROCESS"\
+										   , "GLT_is_this_realized": "IN-PROCESS"\
 										  }}\
 						  }}\
 						 ,{{"$lookup": \
@@ -369,15 +369,15 @@ AG_PIPELINE_FIN08_AP_AR_1_3 = '[{{"$match": {{"runID": {{"$eq": "{run_id}"}},\
                                                    {{ "$eq": [ "$COMPOSITEKEY",  "$$foreignField" ] }}\
                                                }}\
                                               }}\
-                                             ,{{"$sort" : {{ "CPUDT" : -1}}}}\
+                                             ,{{"$sort" : {{ "GLT_incremental_number" : -1}}}}\
                                            ]\
                               ,"as": "matched_existing_exception"\
                            }}\
-                          }}\
-                            ,\
+                          }},\
                           {{"$addFields":{{"firstelem":{{"$first":"$matched_existing_exception"}}}}\
                             }},\
-                          {{"$addFields":{{"GLT_exception_status":"$firstelem.status"\
+                          {{"$addFields":{{"GLT_exception_status":"$firstelem.status",\
+                                         "GLT_incremental_number":{{"$ifNull":["$firstelem.GLT_incremental_number",1]}}\
                                         }}\
                           }},\
                           {{"$addFields":{{\
@@ -393,14 +393,23 @@ AG_PIPELINE_FIN08_AP_AR_1_3 = '[{{"$match": {{"runID": {{"$eq": "{run_id}"}},\
                                                                    }}\
                           }}}},\
                           {{"$addFields":{{\
-                                         "GLT_do_discard":{{"$or":\
-                                                           [{{"$eq":["$GLT_exception_status","Closed"]}},{{"$and":[{{"$eq":["$IMDIF","X"]}},{{"$eq":["$GLT_do_exception_exist",False]}}]}}]\
-                                             \
+                                          "GLT_incremental_number":{{"$cond":\
+                                                                    {{"if":{{"$and":[{{"$eq":["$GLT_do_exception_exist",True]}},{{"$eq":["$GLT_exception_status","Closed"]}}]}}, \
+                                                                     "then":\
+                                                                         {{"$add":["$GLT_incremental_number",1]}},\
+                                                                     "else":\
+                                                                         "$GLT_incremental_number"\
+                                                                    }}\
+                                                                   }}\
+                          }}}},\
+                          {{"$addFields":{{\
+                                         "GLT_do_discard":{{"$and":\
+                                                           [{{"$eq":["$IMDIF","X"]}},\
+                                                            {{"$or":[{{"$eq":["$GLT_exception_status","Closed"]}},{{"$eq":["$GLT_do_exception_exist",False]}}]}}\
+                                                           ]\
+                                                          }}\
                                          }}\
-                              \
-                                          }}\
-                              \
-                          }},\
+                            }},\
                         {{"$addFields":{{\
                         "GLT_history_exceptions_match" : {{"$concatArrays":[[{{"exceptionID": "$firstelem.exceptionID"\
                                                                              , "GLT_lastUpdatedDateTime": "$GLT_lastUpdatedDateTime"\
@@ -422,6 +431,7 @@ AG_PIPELINE_FIN08_AP_AR_1_3 = '[{{"$match": {{"runID": {{"$eq": "{run_id}"}},\
                                                                 ,"GLT_exception_status": "$$new.GLT_exception_status"\
                                                                 ,"GLT_do_exception_exist": "$$new.GLT_do_exception_exist"\
                                                                 ,"GLT_do_discard": "$$new.GLT_do_discard"\
+                                                                ,"GLT_incremental_number": "$$new.GLT_incremental_number"\
 																}}\
 													 }}\
 													]\
@@ -429,9 +439,9 @@ AG_PIPELINE_FIN08_AP_AR_1_3 = '[{{"$match": {{"runID": {{"$eq": "{run_id}"}},\
 						  }},\
 						  ]'
 
-AG_PIPELINE_FIN08_AP_AR_1_4 = '[{{"$match": {{"runID": {{"$eq": "{run_id}"}}\
-                                            ,"GLT_is_this_realized": "IN-PROCESS"\
-                                            ,"GLT_do_discard": False}}}}\
+AG_PIPELINE_FIN08_AP_AR_1_4 = '[{{"$match": {{"runID": {{"$eq": "{run_id}"}},\
+									 "GLT_is_this_realized": "IN-PROCESS"\
+                                    ,"GLT_do_discard": False}}}}\
 						 ,{{"$project": {{"_id": 0, "GLT_is_this_realized": 0\
                                        ,"GLT_do_exception_exist": 0, "GLT_do_discard":0\
                                        ,"GLT_history_exceptions_match":0, "GLT_exception_status":0}}}}\
@@ -441,18 +451,18 @@ AG_PIPELINE_FIN08_AP_AR_1_4 = '[{{"$match": {{"runID": {{"$eq": "{run_id}"}}\
 										 , "GLT_history_runID" : {{"$concatArrays":[[{{"runID": "$runID", "GLT_lastUpdatedDateTime": "$GLT_lastUpdatedDateTime"}}],{{"$cond":{{"if":{{"$eq":[{{"$ifNull":["$GLT_history_runID",""]}}, ""]}}, "then":[], "else":"$GLT_history_runID"}}}}]}}\
 										 , "exceptionID" : ""\
 										 , "reason_code": ""\
-                                         , "GLT_do_auto_close": False\
+                                         , "GLT_do_auto_close": {{"$cond":{{"if":{{"$eq":["$IMDIF", "X"]}}, "then":True, "else":False}}}}\
                                          , "GLT_do_auto_reopen": False\
-										 }} \
+										 }}\
 						  }}\
 						 ,{{"$merge" : {{ "into": "{exception_collection_name}"\
-									  , "on": "COMPOSITEKEY"\
+									  , "on": ["COMPOSITEKEY", "GLT_incremental_number"]\
 									  , "whenMatched":[\
 													 {{"$addFields":\
 																{{"GLT_lastUpdatedDateTime": "$$new.GLT_lastUpdatedDateTime"\
                                                                 ,"runID": "$$new.runID"\
                                                                 ,"FILENAME":"$$new.FILENAME"\
-                                                                ,"GLT_do_auto_close":{{"$cond":{{"if":{{"$eq":["$$new.IMDIF", "X"]}}, "then":True, "else":False}}}}\
+                                                                ,"GLT_do_auto_close":"$$new.GLT_do_auto_close"\
                                                                 ,"GLT_do_auto_reopen":False\
 																,"GLT_history_runID": {{"$concatArrays":["$$new.GLT_history_runID", {{"$cond":{{"if":{{"$eq":[{{"$ifNull":["$GLT_history_runID",""]}}, ""]}}, "then":[], "else":"$GLT_history_runID"}}}}]}}\
                                                                 ,"exceptionID": {{"$toString": "$_id"}}\

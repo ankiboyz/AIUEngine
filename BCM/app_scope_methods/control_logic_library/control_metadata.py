@@ -25,7 +25,7 @@ IndexKeys = typing.NamedTuple('IndexKeys', [('KEY_COMPONENT', list), ('COLLECTIO
 # test = {'KEY1': IndexKeys([("COMPOSITEKEY", 'ASCENDING')],'TFA02', {'unique': True, 'name': 'GLT_BCM_COMPOSITEKEY'})}
 # print(test, test['KEY1'].KEY_COMPONENT)
 
-GLOBAL_CONTROLS_METADATA = {'LIMIT_FOR_RECS_PROCESSING_IN_ONE_ITERATION': 1000}
+GLOBAL_CONTROLS_METADATA = {'LIMIT_FOR_RECS_PROCESSING_IN_ONE_ITERATION': 100000}
 
 SPECIFIC_CONTROLS_METADATA = {
                     'TFA02_IFA19_1': {# 'LIMIT_FOR_RECS_PROCESSING_IN_ONE_ITERATION': 13,
@@ -59,9 +59,10 @@ SPECIFIC_CONTROLS_METADATA = {
                                    },
                     'FIN08_AP_AR_1': {  # 'LIMIT_FOR_RECS_PROCESSING_IN_ONE_ITERATION': 10,
                                       # This is a tuple - first tuple being list of tuples
-                                      'INDEXES': {'KEY1': IndexKeys([("COMPOSITEKEY", pymongo.ASCENDING)], 'EXCEPTION_FIN08_AP_AR_1', {'unique': True, 'name': 'GLT_BCM_COMPOSITE_KEY'})
+                                      'INDEXES': {'KEY1': IndexKeys([("COMPOSITEKEY", pymongo.ASCENDING),("GLT_incremental_number",pymongo.DESCENDING)], 'EXCEPTION_FIN08_AP_AR_1', {'unique': True, 'name': 'GLT_BCM_COMPOSITEKEY_incremental_number'})
                                                   , 'KEY2': IndexKeys([("runID", pymongo.ASCENDING)], 'EXCEPTION_FIN08_AP_AR_1', {'unique': False, 'name': 'GLT_BCM_runID'})
                                                   , 'KEY3': IndexKeys([("exceptionID", pymongo.ASCENDING)], 'EXCEPTION_FIN08_AP_AR_1', {'unique': False, 'name': 'GLT_BCM_exceptionID'})
+                                                  , 'KEY4': IndexKeys([("COMPOSITEKEY", pymongo.ASCENDING)], 'EXCEPTION_FIN08_AP_AR_1', {'unique': False, 'name': 'GLT_BCM_COMPOSITEKEY'})
                                                   }
                                    },
                     'FIN08_INVENTORY_1': {  # 'LIMIT_FOR_RECS_PROCESSING_IN_ONE_ITERATION': 10,
