@@ -14,7 +14,7 @@ LOG_LEVEL = 'DEBUG'   # not gets applicable as the app starts the previous logge
 # as similar to global variables.
 OPERATION_TYPE = 'BCM'
 
-# Main daemon thread for handling jobs in seconds
+# Main daemon thread for handling jobs in seconds (ideally to be kept as 40 or so)
 JOB_HANDLER_THREAD_POLL_FREQUENCY = 40
 
 # Engine related Settings
@@ -178,6 +178,9 @@ class DevelopmentConfig(Config):
     DEVELOPMENT = True
     DEBUG = True
     SQLALCHEMY_ECHO = True
+    # DEVELOPMENT = False
+    # DEBUG = False
+    # SQLALCHEMY_ECHO = False
 
     WHETHER_SUBMIT_TO_KAFKA = False
     MAX_NUM_OF_CONSUMERS_AT_ONE_TIME = 5
@@ -215,7 +218,7 @@ class TestingConfig(Config):
                         "&authMechanism=SCRAM-SHA-1&readPreference=primary" \
                         "&appname=GLT_BCM_AIUENGINE&ssl=false"
 
-    WHETHER_SUBMIT_TO_KAFKA = True
+    WHETHER_SUBMIT_TO_KAFKA = False
     MAX_NUM_OF_THREADS_AT_ONE_TIME = 5
 
     MAX_NUM_OF_CONSUMERS_AT_ONE_TIME = 5

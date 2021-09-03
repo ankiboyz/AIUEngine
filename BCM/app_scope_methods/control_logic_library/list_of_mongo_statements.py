@@ -192,7 +192,8 @@ AG_PIPELINE_TRE07_1_4 = '[{{"$match": {{"runID": {{"$eq": "{run_id}"}},\
                                                                 ,"GLT_do_auto_close":{{"$cond":{{"if":{{"$eq":["$$new.EXP_STATUS", "Cleared Item"]}}, "then":True, "else":False}}}}\
                                                                 ,"GLT_do_auto_reopen":{{"$cond":{{"if":{{"$and":[{{"$eq":["$$new.EXP_STATUS", "Open Item"]}},{{"$eq":["$status", "Closed"]}}]}}, "then":True, "else":False}}}}\
                                                                 ,"GLT_history_runID": {{"$concatArrays":["$$new.GLT_history_runID", {{"$cond":{{"if":{{"$eq":[{{"$ifNull":["$GLT_history_runID",""]}}, ""]}}, "then":[], "else":"$GLT_history_runID"}}}}]}}\
-                                                                ,"exceptionID": {{"$toString": "$_id"}}\
+                                                                ,"GLT_is_this_fresh": False\
+																,"exceptionID": {{"$toString": "$_id"}}\
 																,"XOPVW":"$$new.XOPVW"\
 																,"AGE":"$$new.AGE"\
 																,"EXP_STATUS":"$$new.EXP_STATUS"\

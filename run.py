@@ -5,6 +5,7 @@ import logging, time, threading
 from BCM.app_scope_methods import job_handler
 import config
 import platform
+from datetime import datetime
 
 logger = logging.getLogger(__name__)
 print(logger.parent, 'parent of run logger')
@@ -23,12 +24,21 @@ print(logger.parent, 'parent of run logger')
 def thread_function(name):
     while True:
         logger.info("JOB_HANDLER_THREAD Thread %s: starting", name)
-        job_handler.list_of_jobs_to_be_handled()
         logger.debug(f' The JSM JOB_HANDLER_THREAD Main Daemon Thread loop starting')
+        # Here, we need to handle the exception as the daemon thread is supposed to be running always.
+        try:
+            job_handler.list_of_jobs_to_be_handled()
+        except Exception as error:
+            logger.error(f'There has been an issue within JOB_HANDLER_THREAD, its been handled thoughbut here is the exception {error}',exc_info=True)
+
         # print("Thread %s: starting", name)
-        time.sleep(BCM.app.config["JOB_HANDLER_THREAD_POLL_FREQUENCY"])      # make it configurable the sleep time of main daemon
         logger.debug(f' The JSM JOB_HANDLER_THREAD Main Daemon Thread loop finishing')
         logger.info("JOB_HANDLER_THREAD Thread %s: finishing", name)
+        # print(datetime.now().time(), flush=True)
+        # print(BCM.app.config["JOB_HANDLER_THREAD_POLL_FREQUENCY"], flush=True)
+        time.sleep(BCM.app.config["JOB_HANDLER_THREAD_POLL_FREQUENCY"])      # make it configurable the sleep time of main daemon
+        # time.sleep(40)
+        # print(datetime.now().time(), flush=True)
 
 
 def create_ccm_app():
@@ -67,7 +77,9 @@ if __name__ == "__main__":
         cx_Oracle.init_oracle_client()
 
     appln, db = create_ccm_app()    # as it returns the tuple of application and db
+    print("I am Here: controls_per_engine")
     controls_per_engine.list_of_controls_per_engine()
+    print("I am Here out of: controls_per_engine")
 
     # At restart of the engine, put all the PROCESSING status jobs to the FAILURE state.
     # BCM.models.update_header_table_processing(0,)
@@ -78,6 +90,8 @@ if __name__ == "__main__":
         # and can be reached from the external world.
         # appln.run(host="0.0.0.0", port='50008')
         appln.run(host=config.HOST_IP, port=config.PORT)
+        print("I am Here: running")
+
     finally:
         logger.info("Finally block in the application stop ")
         print("Finally block in the application stop ")  # in case logger is not initialized when the application stops

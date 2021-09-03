@@ -74,7 +74,7 @@ def thread_job_algo():
         sql_str_for_consumers_to_be_awakened = general_methods.get_the_sql_str_for_db('SQL_ID_1', app.config["DATABASE_VENDOR"])
 
         df_consumers_to_be_awakened = pd.read_sql(sql_str_for_consumers_to_be_awakened, flask_sqlalchemy_ngn)
-        logger.debug(f'consumers to be awakened {df_consumers_to_be_awakened.to_string(index=False)}')
+        logger.debug(f'threads to be awakened {df_consumers_to_be_awakened.to_string(index=False)}')
         logger.debug(df_consumers_to_be_awakened.dtypes)
 
         # After sorting out the df needs to be again equated to the changed df.
@@ -94,7 +94,7 @@ def thread_job_algo():
 
             # Here we get a series object of the consumers to be awakened:
             consumers_to_be_awakened_series = df_consumers_to_be_awakened.iloc[:wrk_set_num_rows]["control_id"]
-            logger.debug(f'consumers to be awakened series {consumers_to_be_awakened_series}')
+            logger.debug(f'threads to be awakened series {consumers_to_be_awakened_series}')
 
             threads_spawned_list = list()
 
@@ -113,7 +113,7 @@ def thread_job_algo():
                     logger.error(error, exc_info=True)
 
             # making_consumer_up('REALIZER','REALIZER',app)
-            logger.info(f'List of threads for the consumers spawned is {threads_spawned_list}')
+            logger.info(f'List of threads spawned is {threads_spawned_list}')
             pass
 
 
