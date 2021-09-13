@@ -46,72 +46,143 @@ AG_PIPELINE_GENERIC_STEP_3_MARK_ONES_TO_PROCESS = '[{{"$match": {{"runID": {{"$e
                               ]'
 
 AG_PIPELINE_TFA02_IFA19_1_3 = '[{{"$match": {{"runID": {{"$eq": "{run_id}" }}\
-                                                                 ,"GLT_is_this_realized": {{"$ne": "DONE"}} \
-                                                                }}\
-                                                     }},\
-                              {{"$limit": {limit_for_recs_processing_in_one_iteration}}}\
-                             ,{{"$addFields" : {{"GLT_lastUpdatedDateTime": datetime.datetime.utcnow()\
-                                             , "GLT_is_this_realized": "IN-PROCESS"	\
-                                              }}\
-                              }}\
-                             ,{{"$merge" : {{ "into": "{function_id}"\
-                                          , "on": "_id" \
-                                          , "whenMatched":[ \
-                                                         {{"$addFields":\
-                                                                    {{"GLT_lastUpdatedDateTime": "$$new.GLT_lastUpdatedDateTime"\
-                                                                    ,"GLT_is_this_realized": "$$new.GLT_is_this_realized"\
-                                                                    }}\
-                                                         }}\
-                                                        ]\
-                                          , "whenNotMatched": "discard" }} \
-                              }},\
-                              ]'
+											  ,"GLT_is_this_realized": {{"$ne": "DONE"}}\
+											  }}\
+								  }}, \
+								  {{"$limit": {limit_for_recs_processing_in_one_iteration} }}\
+								 ,{{"$addFields" : {{"GLT_lastUpdatedDateTime": datetime.datetime.utcnow()\
+												 , "GLT_is_this_realized": "IN-PROCESS"\
+												 ,"GLT_whether_S2A": {{"$cond": {{"if": {{"$and": [{{"$eq":["$EXCEPTION", "S2"]}},{{"$or":[{{"$eq":["$KOSTL_VALID", "TRUE"]}},{{"$eq":["$CAUFN_VALID", "TRUE"]}},{{"$eq":["$POSNR_VALID", "TRUE"]}}]}}]}}, "then": True,"else": False}}\
+												  }}}}\
+								  }}\
+								 ,{{"$merge" : {{ "into": "{function_id}"\
+											  , "on": "_id" \
+											  , "whenMatched":[ \
+															 {{"$addFields":\
+																		{{"GLT_lastUpdatedDateTime": "$$new.GLT_lastUpdatedDateTime"\
+																		,"GLT_is_this_realized": "$$new.GLT_is_this_realized"\
+																		,"GLT_whether_S2A":"$$new.GLT_whether_S2A"\
+																		}}\
+															 }}\
+															]\
+											  , "whenNotMatched": "discard" }}\
+								  }},\
+								  ]'
 
-AG_PIPELINE_TFA02_IFA19_1_4 = '[{{"$match": {{"runID": {{"$eq": "{run_id}"}},\
-                                            "GLT_is_this_realized": "IN-PROCESS"}}}}\
-                             ,{{"$project": {{"_id": 0, "GLT_is_this_realized": 0}}}}\
-                             ,{{"$addFields" : {{\
-                                             "GLT_whether_S2A": {{"$cond": {{"if": {{"$and": [{{"$eq":["$EXCEPTION", "S2"]}},{{"$or":[{{"$eq":["$KOSTL_VALID", "TRUE"]}},{{"$eq":["$CAUFN_VALID", "TRUE"]}},{{"$eq":["$POSNR_VALID", "TRUE"]}}]}}]}}, "then": True,"else": False}}\
-                                                              }}\
-                                             , "status": "Unassigned"\
-                                             , "control_id": "{control_id}"\
-                                             , "GLT_history_runID" : {{"$concatArrays":[[{{"runID": "$runID", "GLT_lastUpdatedDateTime": "$GLT_lastUpdatedDateTime"}}],{{"$cond":{{"if":{{"$eq":[{{"$ifNull":["$GLT_history_runID",""]}}, ""]}}, "then":[], "else":"$GLT_history_runID"}}}}]}}\
-                                             , "exceptionID" : "" \
-                                             , "reason_code": "" \
-                                             }}\
-                              \
-                              }}\
-                             ,{{"$addFields" : {{\
-                                            "GLT_do_auto_close": {{"$cond": {{"if": {{"$or": [{{"$eq":["$GLT_whether_S2A", True]}},{{"$eq":["$RATING", "LOW"]}}]}}, "then": True,"else": False}}}}\
-                                             }}\
-                              }}\
-                             ,{{"$merge" : {{ "into": "{exception_collection_name}"\
-                                          , "on": "COMPOSITEKEY"\
-                                          , "whenMatched":[ \
-                                                         {{"$addFields":\
-                                                                    {{"GLT_lastUpdatedDateTime": "$$new.GLT_lastUpdatedDateTime"\
-                                                                    ,"runID": "$$new.runID"\
-																	,"FILENAME":"$$new.FILENAME"\
-                                                                    ,"GLT_do_auto_close":"$$new.GLT_do_auto_close"\
-                                                                    ,"GLT_whether_S2A": "$$new.GLT_whether_S2A"\
-                                                                    ,"GLT_history_runID": {{"$concatArrays":["$$new.GLT_history_runID", {{"$cond":{{"if":{{"$eq":[{{"$ifNull":["$GLT_history_runID",""]}}, ""]}}, "then":[], "else":"$GLT_history_runID"}}}}]}}\
-                                                                    ,"exceptionID": {{"$toString": "$_id"}}\
+# This is the Auto-Close condition based on Auto Close key matches. This is put before the newer docs of the same file
+# being inserted so that the comparision is not made with the recs of the same file.
+AG_PIPELINE_TFA02_IFA19_1_4 = '[{{"$match": {{"runID": {{"$eq": "{run_id}" }}\
+										,"GLT_is_this_realized": "IN-PROCESS"\
+										,"GLT_whether_S2A": True\
+										}}}}\
+							 ,{{"$addFields" : {{\
+											   "GLT_whether_S2A": True\
+											 , "status": "Unassigned"\
+											 , "control_id": "{control_id}"\
+											 , "GLT_history_runID" : [{{"GLT_function_doc_id": "$_id","runID": "$runID", "GLT_lastUpdatedDateTime": "$GLT_lastUpdatedDateTime"}}]	\
+											 , "exceptionID" : ""\
+											 , "reason_code": ""\
+											 }}\
+							  \
+							  }} \
+							 ,{{"$project": {{"_id": 0, "GLT_is_this_realized": 0}}}} \
+							 ,{{"$lookup":\
+							   {{\
+								   "from": "{exception_collection_name}"\
+								 , "let": {{ "curr_rec_BUKRS":"$BUKRS"\
+										 , "curr_rec_ANLN1":"$ANLN1", "curr_rec_ANLN2":"$ANLN2"\
+										 , "curr_rec_FNAME":"$FNAME", "curr_rec_EXCEPTION":"$EXCEPTION"\
+										 , "curr_rec_SYSTEM":"$SYSTEM" \
+										  }}\
+								 , "pipeline": [\
+												  {{"$match": \
+												   {{"$and":[ \
+													   {{"$expr":\
+														   {{ "$eq": [ "$BUKRS",  "$$curr_rec_BUKRS" ] }}\
+													   }},\
+													   {{"$expr":\
+														   {{ "$eq": [ "$ANLN1",  "$$curr_rec_ANLN1" ] }}\
+													   }},\
+													   {{"$expr":\
+														   {{ "$eq": [ "$ANLN2",  "$$curr_rec_ANLN2" ] }}\
+													   }},                                                   \
+													   {{"$expr":\
+														   {{ "$eq": [ "$FNAME",  "$$curr_rec_FNAME" ] }}\
+													   }},\
+													   {{"$expr":\
+														   {{ "$eq": [ "$EXCEPTION",  "$$curr_rec_EXCEPTION" ] }}\
+													   }},\
+													   {{"$expr":\
+														   {{ "$eq": [ "$SYSTEM",  "$$curr_rec_SYSTEM" ] }}\
+													   }},  \
+													   {{"$expr":\
+														   {{ "$ne": [ "$status",  "Closed" ] }} \
+													   }},  \
+												   ]\
+												  }}\
+												  }}\
+											   ]\
+								  ,"as": "matched_existing_exception"\
+							   }}\
+							  }},\
+							  {{"$unwind":\
+								{{\
+								 "path":"$matched_existing_exception"\
+								}}  \
+							  }},\
+							  {{"$addFields":\
+								  {{\
+								 "COMPOSITEKEY":{{"$cond":\
+														 {{"if":{{"$or":[{{"$eq":["$matched_existing_exception.KOSTL_VALID","FALSE"]}}\
+																	   ,{{"$eq":["$matched_existing_exception.CAUFN_VALID","FALSE"]}}\
+																	   ,{{"$eq":["$matched_existing_exception.POSNR_VALID","FALSE"]}}\
+																		]\
+																}}                                                            \
+														  ,"then":\
+														  "$matched_existing_exception.COMPOSITEKEY"\
+														  ,"else":\
+														   "X" \
+														  }}\
+												}}\
+								,"GLT_do_auto_close": True \
+								  }}  \
+							  }},\
+							  {{"$project":\
+								  {{"COMPOSITEKEY": 1, "GLT_history_runID": 1\
+								  ,"runID": 1, "FILENAME": 1, "control_id": 1\
+								  ,"GLT_lastUpdatedDateTime": 1, "GLT_whether_S2A": 1\
+								  ,"USNAM":1, "NAME_TEXT":1, "KOSTL":1, "KOSTL_VALID":1, "CAUFN":1, "CAUFN_VALID":1\
+								  ,"WBS":1, "POSNR_VALID":1, "UDATE":1, "UTIME":1\
+								  ,"TCODE":1, "CNGID":1, "VALUE_NEW":1, "VALUE_OLD":1\
+								  ,"AVFACC":1, "AVEUR":1, "RATING":1, "EXCEPTION":1, "CDHDR_OBJCLAS":1 \
+								  ,"CDHDR_OBJCTID":1, "CDHDR_CHANGENR":1, "CDPOS_OBJCLAS":1, "CDPOS_OBJTID":1\
+								  ,"CDPOS_CHANGENR":1, "GLT_do_auto_close":1\
+								  }}\
+							  }},\
+							  {{"$merge" : {{ "into": "{exception_collection_name}"\
+										  , "on": "COMPOSITEKEY"\
+										  , "whenMatched":[ \
+														 {{"$addFields":\
+																	{{"GLT_lastUpdatedDateTime": "$$new.GLT_lastUpdatedDateTime"\
+																	,"GLT_do_auto_close":"$$new.GLT_do_auto_close"\
+																	,"GLT_whether_S2A": "$$new.GLT_whether_S2A"\
+																	,"GLT_history_runID": {{"$concatArrays":["$$new.GLT_history_runID", {{"$cond":{{"if":{{"$eq":[{{"$ifNull":["$GLT_history_runID",""]}}, ""]}}, "then":[], "else":"$GLT_history_runID"}}}}]}} \
+																	,"exceptionID": {{"$toString": "$_id"}}\
 																	,"USNAM":"$$new.USNAM"\
 																	,"NAME_TEXT":"$$new.NAME_TEXT"\
 																	,"KOSTL":"$$new.KOSTL"\
 																	,"KOSTL_VALID":"$$new.KOSTL_VALID"\
 																	,"CAUFN":"$$new.CAUFN"\
 																	,"CAUFN_VALID":"$$new.CAUFN_VALID"\
-																	,"POSNR":"$$new.POSNR"\
-																	,"PNR_VALID":"$$new.PNR_VALID"\
+																	,"WBS":"$$new.WBS"\
+																	,"POSNR_VALID":"$$new.POSNR_VALID"\
 																	,"UDATE":"$$new.UDATE"\
 																	,"UTIME":"$$new.UTIME"\
 																	,"TCODE":"$$new.TCODE"\
 																	,"CNGID":"$$new.CNGID"\
 																	,"VALUE_NEW":"$$new.VALUE_NEW"\
 																	,"VALUE_OLD":"$$new.VALUE_OLD"\
-																	,"WAERS":"$$new.WAERS"\
-																	,"AVCC":"$$new.AVCC"\
+																	,"AVFACC":"$$new.AVFACC"\
 																	,"AVEUR":"$$new.AVEUR"\
 																	,"RATING":"$$new.RATING"\
 																	,"EXCEPTION":"$$new.EXCEPTION"\
@@ -121,12 +192,72 @@ AG_PIPELINE_TFA02_IFA19_1_4 = '[{{"$match": {{"runID": {{"$eq": "{run_id}"}},\
 																	,"CDPOS_OBJCLAS":"$$new.CDPOS_OBJCLAS"\
 																	,"CDPOS_OBJTID":"$$new.CDPOS_OBJTID"\
 																	,"CDPOS_CHANGENR":"$$new.CDPOS_CHANGENR"\
-                                                                    }}\
-                                                         }}\
-                                                        ]\
-                                          , "whenNotMatched": "insert" }} \
-                              }}\
-                              ]'
+																	}}\
+														 }}\
+														]													\
+										  , "whenNotMatched": "discard" }}\
+							  }}\
+							  ]'
+
+# This is the 4.5th Stage ; for the newer recs that are NOT S2A to be inserted into the exception collection.
+AG_PIPELINE_TFA02_IFA19_1_4_5 = '[{{"$match": {{"runID": {{"$eq": "{run_id}"}}\
+											,"GLT_is_this_realized": "IN-PROCESS"\
+											,"GLT_whether_S2A": False  \
+											}}}}\
+								  ,{{"$addFields" : {{\
+												   "GLT_whether_S2A": False	\
+												 , "status": "Unassigned"	\
+												 , "control_id": "{control_id}"\
+												 , "GLT_history_runID" : [{{"GLT_function_doc_id": "$_id","runID": "$runID", "GLT_lastUpdatedDateTime": "$GLT_lastUpdatedDateTime"}}]	\
+												 , "exceptionID" : "" \
+												 , "reason_code": ""  \
+												 }}\
+								  \
+								  }}\
+								 ,{{"$project": {{"_id": 0, "GLT_is_this_realized": 0}}}}	\
+								 ,{{"$addFields" : {{\
+												"GLT_do_auto_close": {{"$cond": {{"if": {{"$eq":["$RATING", "LOW"]}}, "then": True,"else": False}}}}\
+												}}\
+								  }}\
+								 ,{{"$merge" : {{ "into": "{exception_collection_name}"\
+											  , "on": "COMPOSITEKEY"\
+											  , "whenMatched":[ \
+															 {{"$addFields":\
+																		{{"GLT_lastUpdatedDateTime": "$$new.GLT_lastUpdatedDateTime"\
+																		,"GLT_do_auto_close":"$$new.GLT_do_auto_close"\
+																		,"GLT_whether_S2A": "$$new.GLT_whether_S2A"\
+																		,"GLT_history_runID": {{"$concatArrays":["$$new.GLT_history_runID", {{"$cond":{{"if":{{"$eq":[{{"$ifNull":["$GLT_history_runID",""]}}, ""]}}, "then":[], "else":"$GLT_history_runID"}}}}]}} \
+																		,"exceptionID": {{"$toString": "$_id"}}\
+																		,"USNAM":"$$new.USNAM"\
+																		,"NAME_TEXT":"$$new.NAME_TEXT"\
+																		,"KOSTL":"$$new.KOSTL"\
+																		,"KOSTL_VALID":"$$new.KOSTL_VALID"\
+																		,"CAUFN":"$$new.CAUFN"\
+																		,"CAUFN_VALID":"$$new.CAUFN_VALID"\
+																		,"WBS":"$$new.WBS"\
+																		,"POSNR_VALID":"$$new.POSNR_VALID"\
+																		,"UDATE":"$$new.UDATE"\
+																		,"UTIME":"$$new.UTIME"\
+																		,"TCODE":"$$new.TCODE"\
+																		,"CNGID":"$$new.CNGID"\
+																		,"VALUE_NEW":"$$new.VALUE_NEW"\
+																		,"VALUE_OLD":"$$new.VALUE_OLD"\
+																		,"AVFACC":"$$new.AVFACC"\
+																		,"AVEUR":"$$new.AVEUR"\
+																		,"RATING":"$$new.RATING"\
+																		,"EXCEPTION":"$$new.EXCEPTION"\
+																		,"CDHDR_OBJCLAS":"$$new.CDHDR_OBJCLAS"\
+																		,"CDHDR_OBJCTID":"$$new.CDHDR_OBJCTID"\
+																		,"CDHDR_CHANGENR":"$$new.CDHDR_CHANGENR"\
+																		,"CDPOS_OBJCLAS":"$$new.CDPOS_OBJCLAS"\
+																		,"CDPOS_OBJTID":"$$new.CDPOS_OBJTID"\
+																		,"CDPOS_CHANGENR":"$$new.CDPOS_CHANGENR"\
+																		}}\
+															 }}\
+															]\
+											  , "whenNotMatched": "insert" }} \
+								  }}\
+								  ]'
 
 AG_PIPELINE_TFA02_IFA19_SC7_1_3 = '[{{"$match": {{"runID": {{"$eq": "{run_id}" }}\
                                                                  ,"GLT_is_this_realized": {{"$ne": "DONE"}} \
@@ -194,28 +325,98 @@ AG_PIPELINE_TRE07_1_4 = '[{{"$match": {{"runID": {{"$eq": "{run_id}"}},\
                                                                 ,"GLT_history_runID": {{"$concatArrays":["$$new.GLT_history_runID", {{"$cond":{{"if":{{"$eq":[{{"$ifNull":["$GLT_history_runID",""]}}, ""]}}, "then":[], "else":"$GLT_history_runID"}}}}]}}\
                                                                 ,"GLT_is_this_fresh": False\
 																,"exceptionID": {{"$toString": "$_id"}}\
-																,"XOPVW":"$$new.XOPVW"\
-																,"AGE":"$$new.AGE"\
 																,"EXP_STATUS":"$$new.EXP_STATUS"\
                                                                 ,"AUGDT":"$$new.AUGDT"\
                                                                 ,"AUGBL":"$$new.AUGBL"\
 																,"XSTOV":"$$new.XSTOV"\
 																,"XREVERSAL":"$$new.XREVERSAL"\
 																,"XRAGL":"$$new.XRAGL"\
-																,"ZUONR":"$$new.ZUONR"\
-																,"XBLNR1":"$$new.XBLNR1"\
-																,"SGTXT":"$$new.SGTXT"\
-																,"RATING":"$$new.RATING"\
-																,"BLART":"$$new.BLART"\
-																,"XBLNR":"$$new.XBLNR"\
-																,"USNAM":"$$new.USNAM"\
-																,"CPUDT":"$$new.CPUDT"\
-																,"CPUTM":"$$new.CPUTM"\
-                                                                }}\
+																}}\
                                                      }}\
                                                     ]\
                                       , "whenNotMatched": "insert" }}\
                           }}\
+                          ]'
+
+# This is 4.5th stage; added for Auto Reopen scenarios for TRE07.
+AG_PIPELINE_TRE07_1_4_5 = '[{{"$match": {{"runID": {{"$eq": "{run_id}"}},\
+									 "GLT_is_this_fresh": True, "XREVERSAL": "2", "EXP_STATUS":"Cleared Item"}}}}\
+						 ,{{"$lookup": \
+                           {{\
+                               "from": "{exception_collection_name}"\
+                             , "let": {{ "curr_rec_BELNR":"$BELNR"\
+                                     , "curr_rec_BUKRS":"$BUKRS", "curr_rec_GJAHR":"$GJAHR"\
+                                     , "curr_rec_HKONT":"$HKONT", "curr_rec_SAP":"$SAP"\
+                                     , "curr_rec_EXP_STATUS":"$EXP_STATUS" \
+                                      }}\
+                             , "pipeline": [\
+                                              {{"$match": \
+                                               {{"$and":[ \
+                                                   {{"$expr":\
+                                                       {{ "$eq": [ "$AUGBL",  "$$curr_rec_BELNR" ] }} \
+                                                   }},\
+                                                   {{"$expr":\
+                                                       {{ "$eq": [ "$GJAHR",  "$$curr_rec_GJAHR" ] }}\
+                                                   }},\
+                                                   {{"$expr":\
+                                                       {{ "$eq": [ "$BUKRS",  "$$curr_rec_BUKRS" ] }}\
+                                                   }},\
+                                                   {{"$expr":\
+                                                       {{ "$eq": [ "$HKONT",  "$$curr_rec_HKONT" ] }}\
+                                                   }},\
+                                                   {{"$expr":\
+                                                       {{ "$eq": [ "$SAP",  "$$curr_rec_SAP" ] }}\
+                                                   }},\
+                                                   {{"$expr":\
+                                                       {{ "$eq": [ "$EXP_STATUS",  "$$curr_rec_EXP_STATUS" ] }}\
+                                                   }},\
+                                               ]\
+                                              }}\
+                                              }}\
+                                           ]\
+                              ,"as": "matched_existing_exception"\
+                           }}\
+                          }},\
+                          {{"$unwind":\
+                            {{\
+                             "path":"$matched_existing_exception"\
+                            }}  \
+                          }},\
+                          {{"$addFields":\
+                              {{\
+                               "COMPOSITEKEY": "$matched_existing_exception.COMPOSITEKEY"\
+                             , "GLT_history_runID" : [{{"runID": "$runID", "GLT_lastUpdatedDateTime": "$GLT_lastUpdatedDateTime"}}]\
+                              }}\
+                          }},\
+                          {{"$project":\
+                              {{"COMPOSITEKEY": 1, "GLT_history_runID": 1\
+                              ,"runID": 1, "FILENAME": 1\
+                              ,"GLT_lastUpdatedDateTime": 1, "XSTOV": 1\
+                              ,"XREVERSAL": 1, "XRAGL": 1\
+                              }}\
+                          }}\
+                        ,{{"$merge" : {{ "into": "{exception_collection_name}"\
+									  , "on": "COMPOSITEKEY"\
+									  , "whenMatched":[\
+													 {{"$addFields":\
+																{{"GLT_lastUpdatedDateTime": "$$new.GLT_lastUpdatedDateTime"\
+                                                                ,"runID": "$$new.runID" \
+                                                                ,"FILENAME":"$$new.FILENAME"\
+                                                                ,"GLT_do_auto_close":False\
+                                                                ,"GLT_do_auto_reopen":True\
+																,"GLT_history_runID": {{"$concatArrays":["$$new.GLT_history_runID", {{"$cond":{{"if":{{"$eq":[{{"$ifNull":["$GLT_history_runID",""]}}, ""]}}, "then":[], "else":"$GLT_history_runID"}}}}]}}\
+																 , "GLT_is_this_fresh": False\
+																 ,"EXP_STATUS":"Open Item"\
+                                                                 ,"AUGDT":""\
+                                                                 ,"AUGBL":""\
+																 ,"XSTOV":"$$new.XSTOV"\
+																 ,"XREVERSAL":"$$new.XREVERSAL"\
+																 ,"XRAGL":"$$new.XRAGL"\
+                                                                }}\
+													 }}\
+													]\
+									  , "whenNotMatched": "discard" }}\
+						  }}                      \
                           ]'
 
 AG_PIPELINE_FIN08_FA_1_3 = '[{{"$match": {{"runID": {{"$eq": "{run_id}" }}\

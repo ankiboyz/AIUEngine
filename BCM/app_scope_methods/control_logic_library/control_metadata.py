@@ -33,6 +33,8 @@ SPECIFIC_CONTROLS_METADATA = {
                                       'INDEXES': {'KEY1': IndexKeys([("COMPOSITEKEY", pymongo.ASCENDING)], 'EXCEPTION_TFA02_IFA19_1', {'unique': True, 'name': 'GLT_BCM_COMPOSITEKEY'})
                                                   , 'KEY2': IndexKeys([("runID", pymongo.ASCENDING)], 'EXCEPTION_TFA02_IFA19_1', {'unique': False, 'name': 'GLT_BCM_runID'})
                                                   , 'KEY3': IndexKeys([("exceptionID", pymongo.ASCENDING)], 'EXCEPTION_TFA02_IFA19_1', {'unique': False, 'name': 'GLT_BCM_exceptionID'})
+                                                  , 'KEY4': IndexKeys([("BUKRS", pymongo.ASCENDING), ("ANLN1", pymongo.ASCENDING), ("ANLN2", pymongo.ASCENDING), ("FNAME", pymongo.ASCENDING), ("EXCEPTION", pymongo.ASCENDING),
+                                                                       ("SYSTEM", pymongo.ASCENDING), ("status", pymongo.ASCENDING)], 'EXCEPTION_TFA02_IFA19_1', {'unique': False, 'name': 'GLT_BCM_BUKRS_ANLN1_ANLN2_FNAME_EXCEPTION_SYSTEM_status'})
                                                   }
                                       },
                     'TFA02_IFA19_SC7_1': {# 'LIMIT_FOR_RECS_PROCESSING_IN_ONE_ITERATION': 13,
@@ -47,6 +49,9 @@ SPECIFIC_CONTROLS_METADATA = {
                                       'INDEXES': {'KEY1': IndexKeys([("COMPOSITEKEY", pymongo.ASCENDING)], 'EXCEPTION_TRE07_1', {'unique': True, 'name': 'GLT_BCM_COMPOSITE_KEY'})
                                                   , 'KEY2': IndexKeys([("runID", pymongo.ASCENDING)], 'EXCEPTION_TRE07_1', {'unique': False, 'name': 'GLT_BCM_runID'})
                                                   , 'KEY3': IndexKeys([("exceptionID", pymongo.ASCENDING)], 'EXCEPTION_TRE07_1', {'unique': False, 'name': 'GLT_BCM_exceptionID'})
+                                                  , 'KEY4': IndexKeys([("AUGBL", pymongo.ASCENDING), ("GJAHR", pymongo.ASCENDING), ("BUKRS", pymongo.ASCENDING)
+                                                                      , ("HKONT", pymongo.ASCENDING), ("SAP", pymongo.ASCENDING), ("EXP_STATUS", pymongo.ASCENDING)]
+                                                                      , 'EXCEPTION_TRE07_1', {'unique': False, 'name': 'GLT_BCM_AUGBL_GJAHR_BUKRS_HKONT_SAP_EXP_STATUS'})
                                                   }
                                 },
                     'FIN08_FA_1': {  # 'LIMIT_FOR_RECS_PROCESSING_IN_ONE_ITERATION': 10,

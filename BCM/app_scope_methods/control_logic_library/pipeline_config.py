@@ -56,14 +56,24 @@ PIPELINE = {'TFA02_IFA19_1':
                                                              , method_name='method_tfa02_ifa19_3')
                          },
                         {"ID": "STAGE4"
-                         , "STAGE": Stage(name="PROCESS_AND_MERGE"
+                         , "STAGE": Stage(name="PROCESS_AND_MERGE_S2A_RECORDS"
+                                          , description="This stage processes and merges the S2A records "
+                                                        "in the exception collection; Taking care of Auto Close."
+                                          , stage_type='processing'
+                                          , proceed_to='STAGE4_5')
+                         , "STAGE_PROCESSOR": StageProcessor(path_to_module='BCM.app_scope_methods'
+                                                                            '.control_logic_library.control_TFA02_IFA19'
+                                                             , method_name='method_tfa02_ifa19_4')
+                         },
+                        {"ID": "STAGE4_5"
+                         , "STAGE": Stage(name="PROCESS_AND_MERGE_NON_S2A_RECORDS"
                                           , description="This stage processes and merges the records "
                                                         "in the exception collection."
                                           , stage_type='processing'
                                           , proceed_to='STAGE5')
                          , "STAGE_PROCESSOR": StageProcessor(path_to_module='BCM.app_scope_methods'
                                                                             '.control_logic_library.control_TFA02_IFA19'
-                                                             , method_name='method_tfa02_ifa19_4')
+                                                             , method_name='method_tfa02_ifa19_4_5')
                          },
                         {"ID": "STAGE5"
                          , "STAGE": Stage(name="ADDITIONAL_PROCESSING"
@@ -264,10 +274,21 @@ PIPELINE = {'TFA02_IFA19_1':
                                           , description="This stage processes and merges the records "
                                                         "in the exception collection."
                                           , stage_type='processing'
-                                          , proceed_to='STAGE5')
+                                          , proceed_to='STAGE4_5')
                          , "STAGE_PROCESSOR": StageProcessor(path_to_module='BCM.app_scope_methods'
                                                                             '.control_logic_library.control_TRE07'
                                                              , method_name='method_tre07_4')
+                         },
+                        # This the 4.5th stage added for auto_reopen scenario
+                        {"ID": "STAGE4_5"
+                         , "STAGE": Stage(name="AUTO_REOPEN"
+                                          , description="This stage processes the auto reopen scenarios "
+                                                        "in the exception collection."
+                                          , stage_type='processing'
+                                          , proceed_to='STAGE5')
+                         , "STAGE_PROCESSOR": StageProcessor(path_to_module='BCM.app_scope_methods'
+                                                                            '.control_logic_library.control_TRE07'
+                                                             , method_name='method_tre07_4_5')
                          },
                         {"ID": "STAGE5"
                          , "STAGE": Stage(name="DELETE_FRESH_CLEARED_ITEMS"
