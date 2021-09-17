@@ -76,6 +76,8 @@ SPECIFIC_CONTROLS_METADATA = {
                                                   , 'KEY2': IndexKeys([("runID", pymongo.ASCENDING)], 'EXCEPTION_FIN08_INVENTORY_1', {'unique': False, 'name': 'GLT_BCM_runID'})
                                                   , 'KEY3': IndexKeys([("exceptionID", pymongo.ASCENDING)], 'EXCEPTION_FIN08_INVENTORY_1', {'unique': False, 'name': 'GLT_BCM_exceptionID'})
                                                   , 'KEY4': IndexKeys([("COMPOSITEKEY", pymongo.ASCENDING)], 'EXCEPTION_FIN08_INVENTORY_1', {'unique': False, 'name': 'GLT_BCM_COMPOSITEKEY'})
+                                                  , 'KEY5': IndexKeys([("SYSID", pymongo.ASCENDING), ("BUKRS", pymongo.ASCENDING), ("KONTO", pymongo.ASCENDING), ("status", pymongo.ASCENDING)]
+                                                                      , 'EXCEPTION_FIN08_INVENTORY_1', {'unique': False, 'name': 'GLT_BCM_SYSID_BUKRS_KONTO_status'})
                                                   }
                                    }
                             }

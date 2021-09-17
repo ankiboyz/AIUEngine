@@ -161,7 +161,7 @@ def method_tre07_4_5(appln_cntxt, db_session, mongo_client, control_params_dict)
 
         # Below is the make up to creation of the pipeline
         #Below the function_id is also to be resolved dynamically
-        call_to_be_executed_pre_str = 'db_from_uri_string.{exception_collection_name}.aggregate(' \
+        call_to_be_executed_pre_str = 'db_from_uri_string.{function_id}.aggregate(' \
                                       + mongo_pipeline_code_str \
                                       + ',allowDiskUse=True)'
 

@@ -56,9 +56,9 @@ PIPELINE = {'TFA02_IFA19_1':
                                                              , method_name='method_tfa02_ifa19_3')
                          },
                         {"ID": "STAGE4"
-                         , "STAGE": Stage(name="PROCESS_AND_MERGE_S2A_RECORDS"
-                                          , description="This stage processes and merges the S2A records "
-                                                        "in the exception collection; Taking care of Auto Close."
+                         , "STAGE": Stage(name="PROCESS_AND_MERGE_REVERSED_RECORDS"
+                                          , description="This stage processes and merges the reveresed records "
+                                                        "in the exception collection; Taking care of Auto Reopen."
                                           , stage_type='processing'
                                           , proceed_to='STAGE4_5')
                          , "STAGE_PROCESSOR": StageProcessor(path_to_module='BCM.app_scope_methods'
@@ -66,9 +66,9 @@ PIPELINE = {'TFA02_IFA19_1':
                                                              , method_name='method_tfa02_ifa19_4')
                          },
                         {"ID": "STAGE4_5"
-                         , "STAGE": Stage(name="PROCESS_AND_MERGE_NON_S2A_RECORDS"
+                         , "STAGE": Stage(name="PROCESS_AND_MERGE_NON_REVERSED_RECORDS"
                                           , description="This stage processes and merges the records "
-                                                        "in the exception collection."
+                                                        "in the exception collection.Takes care of Auto Close."
                                           , stage_type='processing'
                                           , proceed_to='STAGE5')
                          , "STAGE_PROCESSOR": StageProcessor(path_to_module='BCM.app_scope_methods'
@@ -571,18 +571,28 @@ PIPELINE = {'TFA02_IFA19_1':
                                              , stage_type='processing'
                                              , proceed_to='STAGE4')
                             , "STAGE_PROCESSOR": StageProcessor(path_to_module='BCM.app_scope_methods'
-                                                                               '.control_logic_library.control_FIN08_INVENTORY'
-                                                                , method_name='method_fin08_inventory_3')
+                                                                               '.control_logic_library.benevolent_methods'
+                                                                , method_name='mark_the_ones_to_be_handled')
                          },
                         {"ID": "STAGE4"
-                            , "STAGE": Stage(name="PROCESS_AND_MERGE"
-                                             , description="This stage processes and merges the records "
-                                                           "in the exception collection."
+                            , "STAGE": Stage(name="PROCESS_AND_MERGE_FOR_AUTO_CLOSE_SCENARIOS"
+                                             , description="This stage processes and merges the records for auto close"
+                                                           "i.e. where the IMDIF is X in the exception collection."
+                                             , stage_type='processing'
+                                             , proceed_to='STAGE4_5')
+                            , "STAGE_PROCESSOR": StageProcessor(path_to_module='BCM.app_scope_methods'
+                                                                               '.control_logic_library.control_FIN08_INVENTORY'
+                                                                , method_name='method_fin08_inventory_4')
+                         },
+                        {"ID": "STAGE4_5"
+                            , "STAGE": Stage(name="PROCESS_AND_MERGE_FOR_Non_AUTO_CLOSE_SCENARIOS"
+                                             , description="This 4.5th stage processes and merges the records for NON-auto close"
+                                                           "i.e. where the IMDIF is Not X in the exception collection."
                                              , stage_type='processing'
                                              , proceed_to='STAGE5')
                             , "STAGE_PROCESSOR": StageProcessor(path_to_module='BCM.app_scope_methods'
                                                                                '.control_logic_library.control_FIN08_INVENTORY'
-                                                                , method_name='method_fin08_inventory_4')
+                                                                , method_name='method_fin08_inventory_4_5')
                          },
                         {"ID": "STAGE5"
                             , "STAGE": Stage(name="ADDITIONAL_PROCESSING"
