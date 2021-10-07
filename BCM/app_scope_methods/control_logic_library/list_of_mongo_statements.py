@@ -45,29 +45,43 @@ AG_PIPELINE_GENERIC_STEP_3_MARK_ONES_TO_PROCESS = '[{{"$match": {{"runID": {{"$e
                               }},\
                               ]'
 
-AG_PIPELINE_TFA02_IFA19_1_3 = '[{{"$match": {{"runID": {{"$eq": "{run_id}" }}\
-											  ,"GLT_is_this_realized": {{"$ne": "DONE"}}\
-											  }}\
-								  }}, \
-								  {{"$limit": {limit_for_recs_processing_in_one_iteration} }}\
-								 ,{{"$addFields" : {{"GLT_lastUpdatedDateTime": datetime.datetime.utcnow()\
-												 , "GLT_is_this_realized": "IN-PROCESS"\
-												 ,"GLT_whether_S2A": {{"$cond": {{"if": {{"$and": [{{"$eq":["$EXCEPTION", "S2"]}},{{"$or":[{{"$eq":["$KOSTL_VALID", "TRUE"]}},{{"$eq":["$CAUFN_VALID", "TRUE"]}},{{"$eq":["$POSNR_VALID", "TRUE"]}}]}}]}}, "then": True,"else": False}}\
-												  }}}}\
-								  }}\
-								 ,{{"$merge" : {{ "into": "{function_id}"\
-											  , "on": "_id" \
-											  , "whenMatched":[ \
-															 {{"$addFields":\
-																		{{"GLT_lastUpdatedDateTime": "$$new.GLT_lastUpdatedDateTime"\
-																		,"GLT_is_this_realized": "$$new.GLT_is_this_realized"\
-																		,"GLT_whether_S2A":"$$new.GLT_whether_S2A"\
-																		}}\
-															 }}\
-															]\
-											  , "whenNotMatched": "discard" }}\
-								  }},\
-								  ]'
+AG_PIPELINE_TFA02_IFA19_1_3 = '[{{"$match": {{"runID": {{"$eq": "{run_id}"}}\
+                                                                 ,"GLT_is_this_realized": {{"$ne": "DONE"}} \
+                                                                }}\
+                                                     }},\
+						  {{"$limit": {limit_for_recs_processing_in_one_iteration}}}\
+						 ,{{"$addFields" : {{"GLT_lastUpdatedDateTime": datetime.datetime.utcnow()\
+										 , "GLT_is_this_realized": "IN-PROCESS"\
+                                         ,"GLT_whether_S2A": {{"$cond": {{"if": {{"$and": [{{"$eq":["$EXCEPTION", "S2"]}},{{"$or":[{{"$eq":["$KOSTL_VALID", "TRUE"]}}\
+                                                                                                                             ,{{"$eq":["$CAUFN_VALID", "TRUE"]}}\
+                                                                                                                             ,{{"$eq":["$POSNR_VALID", "TRUE"]}}\
+                                                                                                                             ,{{"$and":[\
+                                                                                                                                 {{"$eq":["$KOSTL_VALID", ""]}}\
+                                                                                                                                ,{{"$eq":["$CAUFN_VALID", ""]}}\
+                                                                                                                                ,{{"$eq":["$POSNR_VALID", ""]}}\
+                                                                                                                                      ]\
+                                                                                                                              }}\
+                                                                                                                            ]\
+                                                                                                                     }}\
+                                                                                       ]\
+                                                                              }}\
+                                                                        , "then": True\
+                                                                        ,"else": False}}\
+										  }}}}\
+						  }}\
+						 ,{{"$merge" : {{ "into": "{function_id}"\
+									  , "on": "_id"\
+									  , "whenMatched":[\
+													 {{"$addFields":\
+																{{"GLT_lastUpdatedDateTime": "$$new.GLT_lastUpdatedDateTime"\
+																,"GLT_is_this_realized": "$$new.GLT_is_this_realized"\
+                                                                ,"GLT_whether_S2A":"$$new.GLT_whether_S2A"\
+																}}\
+													 }}\
+													]													\
+									  , "whenNotMatched": "discard" }}\
+						  }},\
+						  ]'
 
 # This is the Auto-Close condition based on Auto Close key matches. This is put before the newer docs of the same file
 # being inserted so that the comparision is not made with the recs of the same file.
