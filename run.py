@@ -78,7 +78,7 @@ if __name__ == "__main__":
 
     appln, db = create_ccm_app()    # as it returns the tuple of application and db
     print("I am Here: controls_per_engine")
-    controls_per_engine.list_of_controls_per_engine()
+    controls_per_engine.list_of_controls_per_engine() # This updates the status of the control id in the ngn assoc to status DOWN , upon restart.
     print("I am Here out of: controls_per_engine")
 
     # At restart of the engine, put all the PROCESSING status jobs to the FAILURE state.

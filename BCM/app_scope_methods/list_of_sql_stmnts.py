@@ -25,7 +25,35 @@ the method general_methods.get_the_sql_str_for_db is responsible for resolving t
 # SQL_ID_1 : Query to get the control_Ids for whom the consumers need be launched from this Engine_ID , getting the Ids
 # with min start_dates whose consumers are down.
 
-SQL_ID_1_DEFAULT = f'SELECT A.CONTROL_ID, A.MIN_START_DATE, B.ID, C.STATUS FROM (select CONTROL_ID, MIN(START_DATE) AS \
+# /* Enhanced Query - because of more than one records for same control at the same start date were being submitted
+#  so taking out the min of ID out of those to be worked at. */
+# SELECT A.CONTROL_ID, A.MIN_START_DATE, MIN(B.ID) AS ID, C.STATUS
+# 	FROM
+# 		(select CONTROL_ID, MIN(START_DATE) AS MIN_START_DATE from glt_ccm_xtnd_monitor_header WHERE STATUS IN ('SUBMITTED') GROUP BY CONTROL_ID) A,
+# 		glt_ccm_xtnd_monitor_header B,
+# 		glt_ccm_xtnd_cntrl_ngn_assoc C
+# 		WHERE
+# 			A.CONTROL_ID = B.CONTROL_ID
+# 			AND A.MIN_START_DATE=B.START_DATE
+# 			AND A.CONTROL_ID = C.CONTROL_ID
+# 			AND C.ENGINE_ID = 'EINSTEIN'
+# 			AND C.STATUS = 'DOWN'
+# 	GROUP BY  A.CONTROL_ID, A.MIN_START_DATE,  C.STATUS	  /* Group By and min(B.ID) - Added since more than one records for same control at the same start date were being submitted */
+# 	ORDER BY A.MIN_START_DATE ASC
+
+# outdated one - SQL_ID_1_DEFAULT = f'SELECT A.CONTROL_ID, A.MIN_START_DATE, B.ID, C.STATUS FROM (select CONTROL_ID, MIN(START_DATE) AS \
+#                    MIN_START_DATE from {models.BCMMonitorHDR.__dict__["__table__"]} WHERE STATUS IN (\'SUBMITTED\') GROUP BY CONTROL_ID) A, \
+#                             {models.BCMMonitorHDR.__dict__["__table__"]} B, \
+#                             {models.BCMControlEngineAssoc.__dict__["__table__"]} C \
+#                             WHERE \
+#                                 A.CONTROL_ID = B.CONTROL_ID \
+#                                 AND A.MIN_START_DATE=B.START_DATE \
+#                                 AND A.CONTROL_ID = C.CONTROL_ID \
+#                                 AND C.ENGINE_ID = \'{config.ENGINE_ID}\' \
+#                                 AND C.STATUS = \'DOWN\' \
+#                     ORDER BY A.MIN_START_DATE ASC'
+
+SQL_ID_1_DEFAULT = f'SELECT A.CONTROL_ID, A.MIN_START_DATE, MIN(B.ID) AS ID, C.STATUS FROM (select CONTROL_ID, MIN(START_DATE) AS \
                    MIN_START_DATE from {models.BCMMonitorHDR.__dict__["__table__"]} WHERE STATUS IN (\'SUBMITTED\') GROUP BY CONTROL_ID) A, \
                             {models.BCMMonitorHDR.__dict__["__table__"]} B, \
                             {models.BCMControlEngineAssoc.__dict__["__table__"]} C \
@@ -35,8 +63,8 @@ SQL_ID_1_DEFAULT = f'SELECT A.CONTROL_ID, A.MIN_START_DATE, B.ID, C.STATUS FROM 
                                 AND A.CONTROL_ID = C.CONTROL_ID \
                                 AND C.ENGINE_ID = \'{config.ENGINE_ID}\' \
                                 AND C.STATUS = \'DOWN\' \
+                    GROUP BY  A.CONTROL_ID, A.MIN_START_DATE,  C.STATUS \
                     ORDER BY A.MIN_START_DATE ASC'
-
 # This is the SQL to find out the maximum run sequence for the detail table.
 # The value of {HEADER_ID} being replaced will be the onus of the query executor.
 # For Oracle the bind parameters can be provided as below, it needs be supported by read_sql method of pandas for

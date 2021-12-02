@@ -88,6 +88,12 @@ class Config(object):
     # config variable to True. This is automatically enabled if Flask is in testing mode.
     SQLALCHEMY_RECORD_QUERIES = True
 
+    # SQLALCHEMY_POOL_SIZE: The size of the database pool.Defaults to the engine's default (usually 5).
+    # Controls the number of connections that can be created after the pool reached its maximum size.
+    # SQLALCHEMY_MAX_OVERFLOW: When those additional connections are returned to the pool, they are disconnected and discarded.
+    # Deprecated as of v2.4 and will be removed in v3.0.
+    SQLALCHEMY_POOL_SIZE = 15
+    SQLALCHEMY_MAX_OVERFLOW = 20
     # This oracle client path to the oracle instant client only works for windows server.
     # If the application is installed on Linux then the instant client need to be INSTALLED on the machine,
     # and as in windows simply unzipping the zipped archive of instant client

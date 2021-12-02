@@ -156,6 +156,8 @@ def execution_within_threads(control_id, appln_cntxt):
                     db_job_header_row_id = 0
 
                 # that is some processing is going on, so no additional processing should be done.
+                # Under Review : This case ideally should not come . If the processing is going on then we should NOT increase the count, i.e. we should not
+                # look to signal the Exit.
 
                 if db_job_header_row_id != 0:
                     count_consec_empty = count_consec_empty + 1

@@ -78,7 +78,7 @@ def delegator(control_id, dict_input):
             models.update_header_table(job_header_id, 0, comments, appln)
 
     except Exception as error:
-        logger.error(f'There is an error encountered in getting the mongo db connection {error}')
+        logger.error(f'There is an error encountered in getting the mongo db connection or Flow Chart execution {error}')
 
         job_header_id = dict_input.get('ID', 0)
         comments = error
@@ -179,9 +179,15 @@ class ControlLifecycleFlowchart:
             # returns the detail tables' id.
             dtl_id = models.insert_into_detail_table(self.control_params_dict['ID'], STAGE_NAME_4_DB
                                                      , appln=self.appln)
-            
             # herein, setting the ID for the JOB detail table in the dictionary.
             self.set_additional_control_params_dict('JOB_DETAIL_ID', dtl_id)    # passing the key name and the value.
+
+            # New comment - 11/22
+            # Below command was to test if the issue happens in the pipeline_initialization_procedures
+            # logger.debug(f'method , insert_into_detail_table called for Header ID {self.control_params_dict.ID} '
+            #              f'and detail ID is {dtl_id} ')
+            logger.debug(f'method , insert_into_detail_table called for Header ID {self.control_params_dict["ID"]} '
+                         f'and detail ID is {dtl_id} ')
 
             # it has reached here so no exceptions encountered in set_db_session and set_control_params_dict().
             # also consider the bool_resp from set_pipeline method.
@@ -195,6 +201,8 @@ class ControlLifecycleFlowchart:
 
             self.signal_error(True)
             self.signal_exit(True)
+            self.adding_exceptions_to_response_list(0, str(error), 'EXCEPTION_STACK_TRACE'
+                                                    , traceback.format_exc(), 'Error gathered')
             bool_op = False
 
         return bool_op
@@ -348,7 +356,7 @@ class ControlLifecycleFlowchart:
         if current_stage_type == 'decision':
             # In case of a decision node value is: proceed_to={'yes_ID': 'END', 'no_ID': 'STAGE2'}
             # There would be a need for an error placeholder in decision node as well.
-            fork_dict = {(True if k in ['yes_ID'] else False): v for k,v in current_stage_proceed_to.items()}
+            fork_dict = {(True if k in ['yes_ID'] else False): v for k, v in current_stage_proceed_to.items()}
             # above will yield dict : {True: 'END', False: 'STAGE2'}
             # Now, based on output the stage need be determined:
             next_stage_id = fork_dict[bool_op_current_executed_stage]
@@ -678,16 +686,20 @@ class ControlLifecycleFlowchart:
                         # 0 - Failure / 1 - Success
                         # just in case there is an exception here , write the info first to python's sqlite db , which will be read and
                         # updated by another job, which is local to the engine.
-                        models.update_detail_table(self.control_params_dict['JOB_DETAIL_ID']
-                                                   , 0     # denotes Failure
-                                                   , list(reversed(self.response_list)) # sending the reversed list to be printed in clob column; error shows first
-                                                   , self.appln)
+                        # Instead of the below lines calling a method here.
+                        # models.update_detail_table(self.control_params_dict['JOB_DETAIL_ID']
+                        #                            , 0     # denotes Failure
+                        #                            , list(reversed(self.response_list)) # sending the reversed list to be printed in clob column; error shows first
+                        #                            , self.appln)
+                        #
+                        # ebcp_handshakes.status_sync_with_ebcp(self.control_params_dict['ID'], 0, self.response_list, self.appln)
 
-                        ebcp_handshakes.status_sync_with_ebcp(self.control_params_dict['ID'], 0, self.response_list, self.appln)
+                        # logger.info(f'The job with ID is marked as FAILURE for the pipeline execution '
+                        #             f'for the control {self.control_id} with input params as '
+                        #             f'{self.control_params_dict}')
 
-                        logger.info(f'The job with ID is marked as FAILURE for the pipeline execution '
-                                    f'for the control {self.control_id} with input params as '
-                                    f'{self.control_params_dict}')
+                        self.error_encountered_proc()   # method to be invoked in case of an error.
+
                     else:
                         models.update_detail_table(self.control_params_dict['JOB_DETAIL_ID']
                                                    , 1  # denotes Success
@@ -705,6 +717,12 @@ class ControlLifecycleFlowchart:
                                 f' with input params as '
                                 f'{self.control_params_dict}')
 
+            else:   # check if the error was encountered in the pipeline_initialization_procedures method.
+                print('i m her for check1')
+                if self.flag_error:
+                    print('i m her for check2')
+                    self.error_encountered_proc()  # method to be invoked in case of an error.
+
     def add_to_globals_dict(self, global_to_pipeline_item):
         # reserved for next dev cycle , here we will be able to add custom objects to the globals
         # eg appln context, param dict and connection client.
@@ -712,3 +730,19 @@ class ControlLifecycleFlowchart:
         # all the stages of the pipeline.
         pass
 
+    def error_encountered_proc(self):
+        # Here, we need to mark the job in DB.
+        # 0 - Failure / 1 - Success
+        # just in case there is an exception here , write the info first to python's sqlite db , which will be read and
+        # updated by another job, which is local to the engine.
+        models.update_detail_table(self.control_params_dict['JOB_DETAIL_ID']
+                                   , 0  # denotes Failure
+                                   , list(reversed(self.response_list))
+                                   # sending the reversed list to be printed in clob column; error shows first
+                                   , self.appln)
+
+        ebcp_handshakes.status_sync_with_ebcp(self.control_params_dict['ID'], 0, self.response_list, self.appln)
+
+        logger.info(f'The job with ID is marked as FAILURE for the pipeline execution '
+                    f'for the control {self.control_id} with input params as '
+                    f'{self.control_params_dict}')
