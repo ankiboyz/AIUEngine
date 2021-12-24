@@ -181,20 +181,25 @@ class ProductionConfig(Config):
 
 
 class DevelopmentConfig(Config):
-    DEVELOPMENT = True
-    DEBUG = True
+    # DEVELOPMENT = True
+    # DEBUG = True
+    # SQLALCHEMY_ECHO = True
+    DEVELOPMENT = False
+    DEBUG = False  # Only put DEBUG = True only when needed else should be False in regular running else issues may occur.
     SQLALCHEMY_ECHO = True
-    # DEVELOPMENT = False
-    # DEBUG = False
-    # SQLALCHEMY_ECHO = False
 
     WHETHER_SUBMIT_TO_KAFKA = False
     MAX_NUM_OF_CONSUMERS_AT_ONE_TIME = 5
     MAX_NUM_OF_THREADS_AT_ONE_TIME = 5
 
+    # For Testing:
+    # SQLALCHEMY_POOL_SIZE = 1
+    # SQLALCHEMY_MAX_OVERFLOW = 1
+    # SQLALCHEMY_DATABASE_URI = 'oracle://EBCPDEV2:green123@192.168.2.217:2020/REALIZATION'
+
 class StagingConfig(Config):
     DEVELOPMENT = True
-    DEBUG = True
+    DEBUG = False   # Only put DEBUG = True only when needed else should be False in regular running else issues may occur.
 
     SQLALCHEMY_DATABASE_URI = 'oracle://BCMDEV:green123@sapsr3db.c6djbyal1avz.us-west-2.rds.amazonaws.com:1521/RCMDB'
     KAFKA_BROKER_URLS = ['10.150.75.36:9092', ]

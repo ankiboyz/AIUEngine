@@ -76,10 +76,17 @@ if __name__ == "__main__":
         # and lib_dir=path_to_instant_client do not have any impact
         cx_Oracle.init_oracle_client()
 
-    appln, db = create_ccm_app()    # as it returns the tuple of application and db
+    # This updates the status of the control id in the ngn assoc to status DOWN , upon restart.
+    # This should be completed before the create_ccm_app() is called.
     print("I am Here: controls_per_engine")
-    controls_per_engine.list_of_controls_per_engine() # This updates the status of the control id in the ngn assoc to status DOWN , upon restart.
+    logger.debug("I am Here: controls_per_engine")
+    controls_per_engine.list_of_controls_per_engine()
     print("I am Here out of: controls_per_engine")
+
+    appln, db = create_ccm_app()    # as it returns the tuple of application and db
+
+    # controls_per_engine.list_of_controls_per_engine()
+    # Above,  updates the status of the control id in the ngn assoc to status DOWN , upon restart.
 
     # At restart of the engine, put all the PROCESSING status jobs to the FAILURE state.
     # BCM.models.update_header_table_processing(0,)

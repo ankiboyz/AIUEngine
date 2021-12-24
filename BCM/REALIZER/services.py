@@ -71,6 +71,9 @@ class CCMHeader:
         ccmhdr.id = ret_op['start_value']  # since batchsize was given as 1, so start and end will be same.
         db.session.add(ccmhdr)
 
+        # print('glt_ccm_xtnd_hdr_seq Next Val is 111111 ', db.engine.execute(models.glt_ccm_xtnd_hdr_seq))
+        # print('glt_ccm_xtnd_dtl_seq Next Val is ', models.glt_ccm_xtnd_dtl_seq.next_value())
+
         # Setting up the variables which would be used to publish to Kafka Topic
         ccmhdr_control_id = ccmhdr.control_id
         ccmhdr_id = ccmhdr.id

@@ -57,11 +57,21 @@ class YesNoEnum(enum.Enum):
 
 db = SQLAlchemy()
 
+# coz of this metadata, the sequence is created in same schema automatically if not existing.
+# Any new sequence created should have an entry in the tbl_sequence_association_dict dictionary below
+# (after the tables been defined).
+glt_ccm_xtnd_hdr_seq = db.Sequence('GLT_CCM_XTND_HDR_SEQ', metadata=db.metadata)    # For Header table
+glt_ccm_xtnd_dtl_seq = db.Sequence('GLT_CCM_XTND_DTL_SEQ', metadata=db.metadata)    # For Detail table
+
+# print('glt_ccm_xtnd_hdr_seq Next Val is ', glt_ccm_xtnd_hdr_seq.next_value())
+# print('glt_ccm_xtnd_dtl_seq Next Val is ', glt_ccm_xtnd_dtl_seq.next_value())
+
 
 class BCMMonitorHDR(db.Model):
     __tablename__ = 'glt_ccm_xtnd_monitor_header'
 
     id = db.Column(db.BigInteger, primary_key=True)
+    # id = db.Column(db.BigInteger, db.Sequence('glt_ccm_xtnd_hdr_seq'), primary_key=True)
     control_id = db.Column(db.String(50), nullable=False)
     run_id = db.Column(db.String(500), nullable=True)
     operation_type = db.Column(db.String(50), nullable=True)
@@ -112,6 +122,26 @@ class BCMControlEngineAssoc(db.Model):
     is_multiproc = db.Column(db.Enum(YesNoEnum))
     status = db.Column(db.Enum(KafkaConsumerEnum))
 
+
+# This is the mapper dictionary for the association of the Table name with the Sequence Generator.
+# The Table_name key is populated in a way such that the change in the name of the table will
+# not levy an impact on the logic.
+tbl_sequence_association_dict = {1:
+                                 {'TABLE_NAME': f'{BCMMonitorHDR.__dict__["__table__"]}'
+                                  , 'SEQUENCE_GENERATOR_NAME': 'GLT_CCM_XTND_HDR_SEQ'
+                                  , 'COLUMN_NAME': 'id'
+                                  },
+                                 2:
+                                 {'TABLE_NAME': f'{BCMMonitorDTL.__dict__["__table__"]}'
+                                     , 'SEQUENCE_GENERATOR_NAME': 'GLT_CCM_XTND_DTL_SEQ'
+                                     , 'COLUMN_NAME': 'id'
+                                  },
+                                 }
+
+logger.debug('Table Sequence Association Dictionary', tbl_sequence_association_dict)
+print('Table Sequence Association Dictionary', tbl_sequence_association_dict)
+
+
 def sequences_provider(ip_tablename, ip_columnname, ip_batchsize, appln):
 
     '''
@@ -139,6 +169,7 @@ def sequences_provider(ip_tablename, ip_columnname, ip_batchsize, appln):
     # current_sequence_query = CCMSequences.query.filter_by(table_name='glt_ccm_xtnd_monitor_header', column_name='id')
     logger.info(f'The input parameters for this method are ip_tablename = {ip_tablename}'
                 f', ip_columnname = {ip_columnname} and ip_batchsize = {ip_batchsize}')
+
     with current_app.app_context():
         current_sequence_query = BCMSequences.query.filter_by(table_name=ip_tablename, column_name=ip_columnname)
         # results_all = current_sequence_query.all()
@@ -157,8 +188,28 @@ def sequences_provider(ip_tablename, ip_columnname, ip_batchsize, appln):
         else:
             current_sequence_value = results_first.sequences
 
-        start_value = current_sequence_value + 1
-        end_value = current_sequence_value + ip_batchsize  # so,it denotes the sequence values exhausted by this point.
+        # Added this block as part of the APP-2816 https://greenlightcorp.atlassian.net/browse/APP-2816.
+        # The issue with the unique constraint error.
+
+        # Here, we gather the sequence generator for this table and get the next value for this generator.
+
+        for k,v in tbl_sequence_association_dict.items():
+            if (v['TABLE_NAME'].upper() == ip_tablename.upper()) & (v['COLUMN_NAME'].upper() == ip_columnname.upper()):
+                sequence_gen_name = v.get('SEQUENCE_GENERATOR_NAME', '')
+                break;
+
+
+        # start_value = current_sequence_value + 1
+        # end_value = current_sequence_value + ip_batchsize  #so,it denotes the sequence values exhausted by this point.
+
+        start_value = db.engine.execute(db.Sequence(sequence_gen_name))
+        # Here, the start_value is copied to the end_value; if batch size is > 1 then it will be updated with new vale later below.
+        end_value = start_value
+
+        # If the ip_batchsize is greater than 1 then we need to loop in to get the last sequence.
+        if ip_batchsize > 1:
+            for i in range(1, ip_batchsize): # for batch size =2 it loops only once as start val is already gathered.
+                end_value = db.engine.execute(db.Sequence(sequence_gen_name))
 
         # and now commit with this value , only return after commit happens
         results_first.sequences = end_value
@@ -172,6 +223,7 @@ def sequences_provider(ip_tablename, ip_columnname, ip_batchsize, appln):
 
         print({'start_value': start_value, 'end_value': end_value})
         return {'start_value': start_value, 'end_value': end_value}
+
 
 def consumer_status_update_per_control_engine(topic_id, row_status, appln):
 

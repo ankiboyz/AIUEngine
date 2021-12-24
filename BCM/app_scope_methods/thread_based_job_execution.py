@@ -25,6 +25,7 @@ import config
 # import asyncio
 from BCM.app_scope_methods import control_processing
 import time
+# from  import desc
 
 # Here we get both the app and a db that has been initialized with app (i.e db.init method has been called onto it).
 # And on these we can execute the DB transactions .. and db.session from flask-sqlachemy seems to
@@ -49,6 +50,8 @@ def thread_job_algo():
     with app.app_context():
 
         cntrl_monitor_ngn_assoc = models.BCMControlEngineAssoc()
+
+        db.session.commit()    # setting this up so that we get the fresh value of the below query.
         query_4_consumers_up = cntrl_monitor_ngn_assoc.query.filter_by(status=models.KafkaConsumerEnum.UP
                                                                        , engine_id=app.config["ENGINE_ID"]).all()
         threads_that_can_be_awakened = app.config["MAX_NUM_OF_THREADS_AT_ONE_TIME"] - len(query_4_consumers_up)
@@ -73,7 +76,9 @@ def thread_job_algo():
 
         sql_str_for_consumers_to_be_awakened = general_methods.get_the_sql_str_for_db('SQL_ID_1', app.config["DATABASE_VENDOR"])
 
+        db.session.commit()  # Adding this so that we get the fresh fetch.
         df_consumers_to_be_awakened = pd.read_sql(sql_str_for_consumers_to_be_awakened, flask_sqlalchemy_ngn)
+        print("df_consumers_to_be_awakened", df_consumers_to_be_awakened, df_consumers_to_be_awakened['control_id'])
         logger.debug(f'threads to be awakened {df_consumers_to_be_awakened.to_string(index=False)}')
         logger.debug(df_consumers_to_be_awakened.dtypes)
 
@@ -95,6 +100,7 @@ def thread_job_algo():
             # Here we get a series object of the consumers to be awakened:
             consumers_to_be_awakened_series = df_consumers_to_be_awakened.iloc[:wrk_set_num_rows]["control_id"]
             logger.debug(f'threads to be awakened series {consumers_to_be_awakened_series}')
+            print('consumers_to_be_awakened_series', consumers_to_be_awakened_series)
 
             threads_spawned_list = list()
 
@@ -111,6 +117,9 @@ def thread_job_algo():
 
                 except Exception as error:
                     logger.error(error, exc_info=True)
+
+            for index, thread in enumerate(threads_spawned_list):   # Let these threads finish and then start new ones.
+                thread.join()
 
             # making_consumer_up('REALIZER','REALIZER',app)
             logger.info(f'List of threads spawned is {threads_spawned_list}')
@@ -147,8 +156,10 @@ def execution_within_threads(control_id, appln_cntxt):
                 #  and re-check , if consecutively skipped for n (consecutive_no_recs_to_signal_exit)
                 #  times then gracefully exit.
                 cntrl_monitor_hdr = models.BCMMonitorHDR()
+                db.session.commit()    # Adding this so that we get the fresh fetch.
                 db_job_header_row = cntrl_monitor_hdr.query.filter_by(status=models.StatusEnum.PROCESSING
                                                                                , control_id=control_id).first()
+                logger.debug(f'db_job_header_row  {type(db_job_header_row)}')
 
                 if db_job_header_row is not None:
                     db_job_header_row_id = db_job_header_row.id
@@ -163,12 +174,61 @@ def execution_within_threads(control_id, appln_cntxt):
                     count_consec_empty = count_consec_empty + 1
 
                 else:
-                    # so that its a fresh call and not cached
-                    db_job_header_row = cntrl_monitor_hdr.query.filter_by(status=models.StatusEnum.SUBMITTED
-                                                                          , control_id=control_id).order_by(cntrl_monitor_hdr.start_date)\
-                        .first()
+                    # so that its a fresh call and not cached!! Here, it seems order by is not levied onto the DB.
+                    # db_job_header_row = cntrl_monitor_hdr.query.filter_by(status=models.StatusEnum.SUBMITTED
+                    #                                                       , control_id=control_id).order_by(cntrl_monitor_hdr.start_date)\
+                    #     .first()
+                    # db_job_header_row = cntrl_monitor_hdr.query.filter_by(status=models.StatusEnum.SUBMITTED
+                    #                                                       , control_id=control_id).order_by(
+                    #     cntrl_monitor_hdr.start_date) \
+                    #     .first()
 
-                    print('db_job_header_row', db_job_header_row)
+                    # to be uncommented later --db_job_header_row2_query = cntrl_monitor_hdr.query.filter_by(status=models.StatusEnum.SUBMITTED, control_id=control_id)
+                    # db_job_header_row2 = db_job_header_row2_query.order_by(cntrl_monitor_hdr.start_date).first() #with first the type is class 'BCM.models.BCMMonitorHDR'
+                    # db_job_header_row2 = db_job_header_row2_query.order_by(cntrl_monitor_hdr.start_date).limit(1)   #with limit the type is BaseQuery
+                    # db_job_header_row2 = db_job_header_row2_query.order_by(cntrl_monitor_hdr.start_date).limit(1).all()   #with all the type is list
+                    # to be uncommented later -- db_job_header_row2 = db_job_header_row2_query.order_by(cntrl_monitor_hdr.id).all()
+
+                    # db_job_header_row2_query = cntrl_monitor_hdr.query.order_by(cntrl_monitor_hdr.start_date)
+                    # db_job_header_row2 = db_job_header_row2_query.all()
+
+                    flask_sqlalchemy_ngn = db.get_engine()
+                    sql_str_for_earliest_job_for_that_control = general_methods.get_the_sql_str_for_db('SQL_ID_2',
+                                                                                                  appln_cntxt.config[
+                                                                                                      "DATABASE_VENDOR"])
+
+                    control_id = control_id # needed to resolve control_id just put in explicitly here.
+                    single_quote = "'" # needed by the query.
+                    print('single_quote',single_quote)
+                    print('sql_str_for_earliest_job_for_that_control', sql_str_for_earliest_job_for_that_control)
+                    # SELECT CONTROL_ID, START_DATE, ID, STATUS FROM glt_ccm_xtnd_monitor_header WHERE STATUS IN ('SUBMITTED') AND CONTROL_ID IN ({control_id}) ORDER BY START_DATE ASC
+                    call_to_get_execution_str = 'returned_op_str=' + 'f\'' + sql_str_for_earliest_job_for_that_control + '\''
+                    local_env = locals()
+                    dynamic_execution_to_stringify_call = exec(call_to_get_execution_str, None, local_env)
+                    returned_op_str = local_env['returned_op_str']
+                    print('returned_op_str', returned_op_str)
+
+                    df_job_in_descending_order = pd.read_sql(returned_op_str,
+                                                              flask_sqlalchemy_ngn)
+                    logger.debug(f'df_job_in_descending_order for control_id {control_id} is --> {df_job_in_descending_order} and topmost is {df_job_in_descending_order.iloc[:1]["id"]} ')
+
+                    # db_job_header_row = None
+                    topmost_id = int(df_job_in_descending_order.iloc[:1]["id"].get(0,0)) # need to convert to int to support in the sqlalchemy query.
+                    logger.debug(f'topmost_id for control_id {control_id} is {topmost_id}')
+
+                    if topmost_id == 0:
+                        db_job_header_row = None
+                    else:
+                        db_job_header_row = cntrl_monitor_hdr.query.filter_by(id=topmost_id).first()
+
+                    # SQLAlchemy was not honoring the order_by and hence the controls were not coming in order.
+                    # db_job_header_row = cntrl_monitor_hdr.query.filter_by(status=models.StatusEnum.SUBMITTED
+                    #                                                       , control_id=control_id) \
+                    #     .order_by(cntrl_monitor_hdr.start_date).first()
+                    logger.debug(f'db_job_header_row {type(db_job_header_row)}')
+
+                    # print('db_job_header_row', db_job_header_row)
+                    # logger.debug('db_job_header_row', db_job_header_row )
 
                     if db_job_header_row is not None:
                         db_job_header_row_id = db_job_header_row.id

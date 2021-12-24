@@ -70,3 +70,11 @@ SQL_ID_1_DEFAULT = f'SELECT A.CONTROL_ID, A.MIN_START_DATE, MIN(B.ID) AS ID, C.S
 # For Oracle the bind parameters can be provided as below, it needs be supported by read_sql method of pandas for
 # the respective database. Here, it is :HEADER_ID
 # SQL_ID_2_DEFAULT = 'SELECT NVL(MAX(RUN_SEQUENCE),0) FROM glt_ccm_xtnd_monitor_detail WHERE HEADER_ID = :HEADER_ID'
+
+# SQL_ID_2_DEFAULT = 'SELECT CONTROL_ID, START_DATE, ID, STATUS FROM glt_ccm_xtnd_monitor_header  WHERE STATUS IN ("SUBMITTED") AND CONTROL_ID IN ('FIN08_INVENTORY_1')  ORDER BY START_DATE ASC '
+# It is to gather the earliest job submitted for the control id.
+# The control_id to be resolved where the query is being used. Always good to leave one space in the begining of SQL statement and before end.
+# "cannot be put in here in the query (doesnt work in oracle); so that while resolving {control_id} with f' single quote will pose problem.
+SQL_ID_2_DEFAULT = f' SELECT CONTROL_ID, START_DATE, ID, STATUS FROM {models.BCMMonitorHDR.__dict__["__table__"]} ' \
+                   f' WHERE STATUS IN (''{single_quote}''''SUBMITTED''''{single_quote}'') AND CONTROL_ID IN (''{single_quote}''''{control_id}''''{single_quote}'') ' \
+                   f' ORDER BY START_DATE ASC '
