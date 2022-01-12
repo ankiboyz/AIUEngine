@@ -51,12 +51,20 @@ def create_ccm_app():
     # THis should be done from within the main only as this method is called intermittently as well to get app and db
     # controls_per_engine.list_of_controls_per_engine()
 
+    # # start a job handler thread
+    # Commenting below code as the create_ccm_app is called by the delegator as well; so delegator also triggers a background thread.
+    # x = threading.Thread(target=thread_function, args=("JOB_HANDLER_THREAD",), daemon=True)
+    # logger.info("Main : JOB_HANDLER_THREAD before running thread")
+    # x.start()
+
+    return BCM.app, BCM.db  # here it returns the initialized db as well.
+
+
+def start_background_thread():
     # start a job handler thread
     x = threading.Thread(target=thread_function, args=("JOB_HANDLER_THREAD",), daemon=True)
     logger.info("Main : JOB_HANDLER_THREAD before running thread")
     x.start()
-
-    return BCM.app, BCM.db  # here it returns the initialized db as well.
 
 
 if __name__ == "__main__":
@@ -84,6 +92,9 @@ if __name__ == "__main__":
     print("I am Here out of: controls_per_engine")
 
     appln, db = create_ccm_app()    # as it returns the tuple of application and db
+
+    #  start the background thread.
+    start_background_thread()
 
     # controls_per_engine.list_of_controls_per_engine()
     # Above,  updates the status of the control id in the ngn assoc to status DOWN , upon restart.
